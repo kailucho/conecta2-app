@@ -26,7 +26,7 @@ describe('parejaVinculada', () => {
     })).toBe(true)
   })
 
-  it('declara que la conexión real aún no está disponible', () => {
+  it('declara que la conexión real no está disponible sin Supabase configurado', () => {
     expect(vinculacionDisponible()).toBe(false)
   })
 })

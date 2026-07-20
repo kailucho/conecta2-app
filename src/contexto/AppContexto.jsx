@@ -19,11 +19,19 @@ import {
   CLAVES,
   agregarInteraccion,
   actualizarInteraccion,
+  cancelarInteraccion as cancelarInteraccionStorage,
+  agregarOperacion,
   limpiarTodo,
   generarId,
   migrarVinculacionLegada,
 } from '@/servicios/storageService.js'
 import { parejaVinculada } from '@/servicios/syncService.js'
+import { supabaseConfigurado } from '@/servicios/supabaseClient.js'
+import { drenarCola, instalarListenersDrenaje } from '@/servicios/colaOffline.js'
+import { suscribirRealtime, listarRemotas } from '@/servicios/interactionRepository.js'
+import { resumenPareja } from '@/servicios/gamificationRepository.js'
+import { calcularNivel } from '@/motor/gamificacion.js'
+import { publicarSnapshot } from '@/servicios/cycleShareService.js'
 
 const AppContexto = createContext(null)
 
@@ -157,8 +165,90 @@ export function ProveedorApp({ children }) {
           sos,
         },
       })
+      // Intenta drenar lo que haya quedado pendiente de una sesión anterior.
+      if (supabaseConfigurado) drenarCola()
     })()
   }, [])
+
+  // Reintenta la cola offline al recuperar conexión o volver la PWA a primer plano.
+  useEffect(() => {
+    if (!supabaseConfigurado) return undefined
+    return instalarListenersDrenaje()
+  }, [])
+
+  // Refresca la lista local tras cualquier drenaje exitoso de la cola.
+  const refrescarInteracciones = useCallback(async () => {
+    const lista = await obtener(CLAVES.interacciones, [])
+    dispatch({ tipo: 'SET_INTERACCIONES', lista })
+  }, [])
+
+  // Fusiona una interacción recibida por Realtime en la caché local (dedupe por id).
+  const fusionarInteraccionRemota = useCallback(async (remota) => {
+    const lista = await obtener(CLAVES.interacciones, [])
+    const idx = lista.findIndex((it) => it.id === remota.id)
+    let siguiente
+    if (idx === -1) {
+      siguiente = [remota, ...lista]
+    } else {
+      siguiente = [...lista]
+      siguiente[idx] = { ...siguiente[idx], ...remota }
+    }
+    await guardar(CLAVES.interacciones, siguiente)
+    dispatch({ tipo: 'SET_INTERACCIONES', lista: siguiente })
+  }, [])
+
+  // Trae el historial remoto al vincularse (Realtime solo entrega cambios
+  // NUEVOS después de suscribirse; sin este fetch, lo que la pareja envió
+  // antes de que este dispositivo se suscribiera nunca aparecería).
+  useEffect(() => {
+    if (!supabaseConfigurado) return
+    if (!parejaVinculada(estado.perfil)) return
+    ;(async () => {
+      const resultado = await listarRemotas(estado.perfil.coupleId)
+      if (!resultado.ok) return
+      const lista = await obtener(CLAVES.interacciones, [])
+      const porId = new Map(lista.map((it) => [it.id, it]))
+      for (const remota of resultado.interacciones) {
+        porId.set(remota.id, { ...porId.get(remota.id), ...remota })
+      }
+      const fusionada = Array.from(porId.values()).sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      )
+      await guardar(CLAVES.interacciones, fusionada)
+      dispatch({ tipo: 'SET_INTERACCIONES', lista: fusionada })
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estado.perfil?.coupleId, estado.perfil?.estadoVinculacion])
+
+  // Suscripción Realtime a las interacciones de la pareja activa.
+  useEffect(() => {
+    if (!supabaseConfigurado) return undefined
+    if (!parejaVinculada(estado.perfil)) return undefined
+    const cancelar = suscribirRealtime(estado.perfil.coupleId, (remota) => {
+      fusionarInteraccionRemota(remota)
+    })
+    return cancelar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estado.perfil?.coupleId, estado.perfil?.estadoVinculacion])
+
+  // Reconcilia los puntos locales con el total remoto (point_events) de la
+  // pareja activa: nunca resta, solo adopta el remoto si es mayor al local
+  // (p.ej. porque se otorgaron puntos desde el otro dispositivo).
+  useEffect(() => {
+    if (!supabaseConfigurado) return
+    if (!parejaVinculada(estado.perfil)) return
+    ;(async () => {
+      const resultado = await resumenPareja(estado.perfil.coupleId)
+      if (!resultado.ok) return
+      const mio = resultado.porUsuario[estado.perfil.userId]
+      if (mio && mio.puntos > estado.gamificacion.puntos) {
+        const nueva = { ...estado.gamificacion, puntos: mio.puntos, nivel: calcularNivel(mio.puntos) }
+        await guardar(CLAVES.gamificacion, nueva)
+        dispatch({ tipo: 'SET_GAMIFICACION', cambios: nueva })
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estado.perfil?.coupleId, estado.perfil?.estadoVinculacion])
 
   // ---------- Acciones expuestas ----------
 
@@ -181,8 +271,12 @@ export function ProveedorApp({ children }) {
       const nuevo = { ...estado.ciclo, ...cambios }
       await guardar(CLAVES.ciclo, nuevo)
       dispatch({ tipo: 'SET_CICLO', cambios })
+      // Publica el resumen filtrado (nunca los datos crudos) para la pareja.
+      if (supabaseConfigurado && parejaVinculada(estado.perfil)) {
+        publicarSnapshot(nuevo, estado.perfil)
+      }
     },
-    [estado.ciclo],
+    [estado.ciclo, estado.perfil],
   )
 
   const actualizarGamificacion = useCallback(
@@ -261,10 +355,19 @@ export function ProveedorApp({ children }) {
       dispatch({ tipo: 'SET_ERROR_INTERACCION', motivo: 'error_persistencia' })
       return { ok: false, motivo: 'error_persistencia' }
     }
+    if (supabaseConfigurado) {
+      await agregarOperacion({
+        entity: 'interactions',
+        action: 'insert',
+        entityId: interaccion.id,
+        payload: interaccion,
+      })
+      drenarCola().then(refrescarInteracciones)
+    }
     const lista = await obtener(CLAVES.interacciones, [])
     dispatch({ tipo: 'SET_INTERACCIONES', lista })
     return { ok: true, interaccion }
-  }, [estado.perfil])
+  }, [estado.perfil, refrescarInteracciones])
 
   // Compatibilidad defensiva para cualquier consumidor que aún use la API
   // anterior: un receiverId siempre activa el mismo guard central.
@@ -289,9 +392,34 @@ export function ProveedorApp({ children }) {
 
   const editarInteraccion = useCallback(async (id, cambios) => {
     await actualizarInteraccion(id, cambios)
+    if (supabaseConfigurado && cambios.status === 'acknowledged') {
+      await agregarOperacion({
+        entity: 'interactions',
+        action: 'update',
+        entityId: id,
+        payload: { respuestaTexto: cambios.respuestaTexto || null },
+      })
+      drenarCola().then(refrescarInteracciones)
+    }
     const lista = await obtener(CLAVES.interacciones, [])
     dispatch({ tipo: 'SET_INTERACCIONES', lista })
-  }, [])
+  }, [refrescarInteracciones])
+
+  // Cancela una interacción propia (solo el emisor puede hacerlo).
+  const cancelarInteraccion = useCallback(async (id) => {
+    await cancelarInteraccionStorage(id)
+    if (supabaseConfigurado) {
+      await agregarOperacion({
+        entity: 'interactions',
+        action: 'update',
+        entityId: id,
+        payload: { tipo: 'cancelar' },
+      })
+      drenarCola().then(refrescarInteracciones)
+    }
+    const lista = await obtener(CLAVES.interacciones, [])
+    dispatch({ tipo: 'SET_INTERACCIONES', lista })
+  }, [refrescarInteracciones])
 
   const registrarAnimoObservado = useCallback(
     async (registro) => {
@@ -319,6 +447,7 @@ export function ProveedorApp({ children }) {
     enviarInteraccionPareja,
     crearInteraccion,
     editarInteraccion,
+    cancelarInteraccion,
     registrarAnimoObservado,
     solicitarVinculacion,
     cerrarSolicitudVinculacion,

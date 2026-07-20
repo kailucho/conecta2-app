@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react'
 import { ProveedorApp } from './contexto/AppContexto.jsx'
+import { ProveedorAuth } from './contexto/AuthContexto.jsx'
 import App from './App.jsx'
 import { claveDia } from './motor/fechas.js'
 
@@ -63,9 +64,11 @@ function sembrarPerfil(rol) {
 
 async function montar() {
   render(
-    <ProveedorApp>
-      <App />
-    </ProveedorApp>,
+    <ProveedorAuth>
+      <ProveedorApp>
+        <App />
+      </ProveedorApp>
+    </ProveedorAuth>,
   )
   // Espera a que termine la hidratación (desaparece el splash).
   await waitFor(() => expect(screen.queryByText('Más')).toBeTruthy())

@@ -22,6 +22,8 @@ import Personaje from '../componentes/personajes/Personaje.jsx'
 import FondoDecorativo from '../componentes/comunes/FondoDecorativo.jsx'
 import { EXPRESIONES, expresionPorFase } from '../motor/expresiones.js'
 import BandejaPareja from '../componentes/transversales/BandejaPareja.jsx'
+import ConfirmacionRespuesta from '../componentes/transversales/ConfirmacionRespuesta.jsx'
+import SugerenciaRegla from '../componentes/hoy/SugerenciaRegla.jsx'
 import BarraComunicacion from '../componentes/comunicacion/BarraComunicacion.jsx'
 import CentroInteracciones from '../componentes/comunicacion/CentroInteracciones.jsx'
 import MensajeLibre from '../componentes/comunicacion/MensajeLibre.jsx'
@@ -161,6 +163,8 @@ export default function Hoy({ abrirSOS, irA }) {
 
         {/* Mensajes recibidos de la pareja (null si no hay) */}
         <BandejaPareja />
+        <ConfirmacionRespuesta />
+        <SugerenciaRegla />
 
         {/* Única recomendación del día */}
         <TarjetaParaHoy

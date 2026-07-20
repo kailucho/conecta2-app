@@ -8,6 +8,7 @@
 // ============================================================
 
 import { obtener, CLAVES } from './storageService.js'
+import { supabaseConfigurado } from './supabaseClient.js'
 
 export const ESTADOS_VINCULACION = {
   NO_VINCULADA: 'no_vinculada',
@@ -16,7 +17,8 @@ export const ESTADOS_VINCULACION = {
 }
 
 /**
- * ¿Está la pareja vinculada? En Fase 1 siempre false.
+ * ¿Está la pareja vinculada? Verdadero solo con coupleId + partnerId reales
+ * (asignados por el flujo de vinculación de Supabase).
  */
 export function parejaVinculada(perfil) {
   return Boolean(
@@ -27,9 +29,9 @@ export function parejaVinculada(perfil) {
   )
 }
 
-/** La versión local todavía no cuenta con un servicio real entre dispositivos. */
+/** La vinculación entre dispositivos requiere Supabase configurado. */
 export function vinculacionDisponible() {
-  return false
+  return supabaseConfigurado
 }
 
 /**

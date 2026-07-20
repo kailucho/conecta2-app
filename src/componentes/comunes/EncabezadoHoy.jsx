@@ -4,6 +4,7 @@
 import { fechaLarga } from '../../motor/fechas.js'
 import ChipNivel from './ChipNivel.jsx'
 import IndicadorConexion from './IndicadorConexion.jsx'
+import IndicadorSync from './IndicadorSync.jsx'
 
 export default function EncabezadoHoy({ fase, dia, mostrarFase = true, saludo }) {
   return (
@@ -24,6 +25,7 @@ export default function EncabezadoHoy({ fase, dia, mostrarFase = true, saludo })
       <div className="flex flex-col items-end gap-1.5">
         <ChipNivel />
         <IndicadorConexion />
+        <IndicadorSync />
       </div>
     </header>
   )

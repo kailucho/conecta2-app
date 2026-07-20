@@ -11,7 +11,7 @@ export default function Velocimetro({ fase, score, tono, zonaRoja }) {
   return (
     <TarjetaBase className="flex flex-col items-center">
       <p className="mb-1 text-xs font-bold uppercase tracking-wide text-acento">
-        Nivel del día
+        Peligrosidad
       </p>
       <Medidor valor={score} max={10} etiqueta={`Fase ${fase.nombre}`} />
       <p className="mt-2 text-center font-titulo text-lg font-bold text-texto">

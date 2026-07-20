@@ -7,53 +7,7 @@ import TarjetaBase from '../comunes/TarjetaBase.jsx'
 import EscenaJuntos from '../personajes/EscenaJuntos.jsx'
 import { usarApp } from '../../contexto/AppContexto.jsx'
 import { estaExpirado } from '../../motor/fechas.js'
-import { accionPorId } from '../../datos/accionesRapidas.js'
-import { alertaPorId } from '../../datos/alertasEstado.js'
-
-const RESPUESTAS_GENERICAS = ['💗 Gracias', 'Hablemos luego', '🫂 Aquí estoy']
-
-// Resuelve etiqueta (emoji + texto) y respuestas sugeridas para cualquier tipo
-// de interacción recibida, de forma tolerante a tipos nuevos o desconocidos.
-function resolverInteraccion(it) {
-  switch (it.type) {
-    case 'quick_action': {
-      const def = accionPorId(it.actionId)
-      return {
-        emoji: def?.emoji || '💌',
-        texto: def?.notif || def?.label || 'Te envió algo',
-        respuestas: def?.respuestas || RESPUESTAS_GENERICAS,
-      }
-    }
-    case 'alerta_estado': {
-      const def = alertaPorId(it.actionId)
-      return {
-        emoji: def?.emoji || '🚦',
-        texto: def?.notif || def?.label || 'Te compartió cómo se siente',
-        respuestas: ['🫂 Entendido, aquí estoy'],
-      }
-    }
-    case 'mensaje':
-      return {
-        emoji: '💬',
-        texto: 'Te escribió un mensajito',
-        respuestas: RESPUESTAS_GENERICAS,
-      }
-    case 'animo':
-      return {
-        emoji: it.actionId || '💭',
-        texto: 'Te compartió su ánimo',
-        respuestas: RESPUESTAS_GENERICAS,
-      }
-    case 'aprecio':
-      return {
-        emoji: '💛',
-        texto: 'Reconoció algo lindo de ti',
-        respuestas: ['💛 Qué lindo', '🥰 Gracias', '🫂 Aquí estoy'],
-      }
-    default:
-      return { emoji: '💌', texto: 'Te envió algo', respuestas: RESPUESTAS_GENERICAS }
-  }
-}
+import { resolverInteraccion } from '../../motor/interacciones.js'
 
 export default function BandejaPareja() {
   const { perfil, interacciones, editarInteraccion } = usarApp()

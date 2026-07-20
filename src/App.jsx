@@ -5,18 +5,29 @@
 // - Si hay perfil, muestra las 5 pestañas + overlay de SOS.
 // ============================================================
 
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { usarApp } from './contexto/AppContexto.jsx'
 import NavegacionInferior from './componentes/comunes/NavegacionInferior.jsx'
 import Onboarding from './pantallas/Onboarding.jsx'
 import Hoy from './pantallas/Hoy.jsx'
 import Mes from './pantallas/Mes.jsx'
-import Guia from './pantallas/Guia.jsx'
 import Nosotros from './pantallas/Nosotros.jsx'
 import Ajustes from './pantallas/Ajustes.jsx'
-import FlujoSOS from './componentes/sos/FlujoSOS.jsx'
 import BloqueoPIN from './componentes/comunes/BloqueoPIN.jsx'
 import ParejaRequerida from './componentes/vinculacion/ParejaRequerida.jsx'
+
+// Guía (Traductor/Generador de mensajes con IA) y el flujo de SOS (Chat con
+// IA) solo se visitan a veces: se separan del chunk principal.
+const Guia = lazy(() => import('./pantallas/Guia.jsx'))
+const FlujoSOS = lazy(() => import('./componentes/sos/FlujoSOS.jsx'))
+
+function CargandoPantalla() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center">
+      <div className="animate-[destello_1.2s_ease-in-out_infinite] text-3xl">💙💗</div>
+    </div>
+  )
+}
 
 export default function App() {
   const {
@@ -77,7 +88,11 @@ export default function App() {
   const PANTALLAS = {
     hoy: <Hoy abrirSOS={() => setSosAbierto(true)} irA={setPestana} />,
     mes: <Mes />,
-    guia: <Guia alVolver={() => setPestana('ajustes')} />,
+    guia: (
+      <Suspense fallback={<CargandoPantalla />}>
+        <Guia alVolver={() => setPestana('ajustes')} />
+      </Suspense>
+    ),
     nosotros: <Nosotros />,
     ajustes: (
       <Ajustes
@@ -99,7 +114,11 @@ export default function App() {
 
       <NavegacionInferior activa={pestanaActiva} alCambiar={setPestana} />
 
-      {sosAbierto && <FlujoSOS alCerrar={() => setSosAbierto(false)} />}
+      {sosAbierto && (
+        <Suspense fallback={<CargandoPantalla />}>
+          <FlujoSOS alCerrar={() => setSosAbierto(false)} />
+        </Suspense>
+      )}
 
       <ParejaRequerida
         abierto={!!solicitudVinculacion || !!errorInteraccion}

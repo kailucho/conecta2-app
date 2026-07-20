@@ -1,108 +1,67 @@
 // ============================================================
 // aiService — capa de IA con DEGRADACIÓN ELEGANTE.
 //
-// Cada función tiene un fallback estático. Si la IA está apagada, no hay API
-// key, o la llamada falla/expira, se usa el fallback automáticamente. Así la
-// app funciona 100% offline y sin costo.
+// Cada función tiene un fallback estático. Si la IA está apagada, Supabase
+// no está configurado, o la llamada falla/expira, se usa el fallback
+// automáticamente. Así la app funciona 100% offline y sin costo.
 //
-// La key vive en la variable de entorno VITE_ANTHROPIC_API_KEY (nunca en el
-// código). Modelo: claude-haiku (bajo costo).
+// La llamada real ocurre en la Edge Function `ai` (supabase/functions/ai) —
+// la API key de Anthropic vive SOLO en los secretos del servidor y nunca en
+// el bundle del navegador. Modelo: claude-haiku (bajo costo).
 // ============================================================
 
 import { obtener, guardar, CLAVES } from './storageService.js'
+import { supabase, supabaseConfigurado } from './supabaseClient.js'
 import { detectarNubarronEstatico, NUBARRONES } from '../datos/nubarrones.js'
 import { traducirEstatico } from '../datos/diccionario.js'
 import { contenidoFase } from '../datos/tiposFase.js'
 import { escenarioPorId } from '../datos/protocolosSOS.js'
 
-const API_URL = 'https://api.anthropic.com/v1/messages'
-const MODELO = 'claude-haiku-4-5'
 const TIMEOUT_MS = 10000
 
-function tieneKey() {
-  return !!import.meta.env.VITE_ANTHROPIC_API_KEY
-}
-
-// Prompts de sistema por tarea. Todos exigen tono peruano cariñoso y la regla
-// de nunca culpar, burlarse ni atribuir todo a las hormonas.
-const SISTEMA = {
-  sos_chat:
-    'Eres un consejero de pareja cálido y práctico, peruano informal. Ayuda a desescalar conflictos con pasos concretos y una disculpa redactada si aplica. Identifica si aparece alguno de los 4 jinetes de Gottman (crítica, desprecio, defensividad, bloqueo) y da su antídoto. Nunca culpes a la pareja ausente ni atribuyas emociones solo a hormonas. Sé breve.',
-  mensaje_carinoso:
-    'Eres un asistente que escribe mensajes cariñosos y auténticos en español peruano informal, según la fase del ciclo y el contexto. Nada cursi de más, nada burlón. Devuelve solo el mensaje.',
-  traductor:
-    'Traduces lo que dijo la pareja a lo que probablemente quiso decir, con empatía y humor suave (nunca burlón). Explica el significado, cómo responder y un nivel de gravedad. Español peruano informal.',
-  insights:
-    'Analizas registros de ánimo y de la relación y das 2-3 observaciones honestas, útiles y con humor suave, en español peruano. Nunca culpes ni atribuyas todo a las hormonas; usa "podría", "coincide con".',
-  reformulador:
-    'Reformulas una queja agresiva en un inicio suave de Gottman: "Me siento [emoción] cuando [situación específica], me gustaría [pedido]". Español peruano. Devuelve solo la versión reformulada.',
-}
+// Tareas soportadas. Deben coincidir exactamente con las claves SISTEMA de
+// supabase/functions/ai/index.ts (el prompt del sistema ahora vive ahí,
+// server-side, junto con la API key).
+const TAREAS_VALIDAS = new Set([
+  'sos_chat',
+  'mensaje_carinoso',
+  'traductor',
+  'insights',
+  'reformulador',
+])
 
 /**
- * Punto de entrada único. Intenta IA; si no, cae al fallback.
- * @param {string} tarea   clave de SISTEMA
+ * Punto de entrada único. Intenta la Edge Function de IA; si no, cae al
+ * fallback estático. Nunca lanza: siempre devuelve { texto, fuente }.
+ * @param {string} tarea   una de TAREAS_VALIDAS
  * @param {object} contexto datos + `mensajeUsuario`
  */
 export async function askAI(tarea, contexto = {}) {
   const config = await obtener(CLAVES.config, {})
   await incrementarUso()
 
-  // Condiciones para usar el fallback directamente.
-  if (!config.iaActiva || !tieneKey()) {
+  // Condiciones para usar el fallback directamente, sin llamar a la red.
+  if (!config.iaActiva || !supabaseConfigurado || !TAREAS_VALIDAS.has(tarea)) {
     return { texto: fallback(tarea, contexto), fuente: 'fallback' }
   }
 
   try {
     const ctrl = new AbortController()
     const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
-    const resp = await fetch(API_URL, {
-      method: 'POST',
+    const { data, error } = await supabase.functions.invoke('ai', {
+      body: { tarea, contexto },
       signal: ctrl.signal,
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: MODELO,
-        max_tokens: 500,
-        system: SISTEMA[tarea] || '',
-        messages: [
-          {
-            role: 'user',
-            content: construirPrompt(tarea, contexto),
-          },
-        ],
-      }),
     })
     clearTimeout(t)
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-    const data = await resp.json()
-    const texto = data?.content?.[0]?.text?.trim()
+    if (error) throw error
+    const texto = data?.texto?.trim?.()
     if (!texto) throw new Error('Respuesta vacía')
     return { texto, fuente: 'ia' }
   } catch (e) {
-    // Degradación elegante: cualquier fallo cae al fallback.
-    console.warn('[aiService] Falló la IA, usando fallback:', e.message)
+    // Degradación elegante: cualquier fallo (sin conexión, JWT inválido,
+    // rate limit, timeout, IA sin configurar en el servidor) cae al fallback.
+    console.warn('[aiService] Falló la IA, usando fallback:', e?.message || e)
     return { texto: fallback(tarea, contexto), fuente: 'fallback' }
-  }
-}
-
-function construirPrompt(tarea, ctx) {
-  switch (tarea) {
-    case 'sos_chat':
-      return `Situación: ${ctx.mensajeUsuario}\nEscenario: ${ctx.escenario || 'general'}\nTono de humor: ${ctx.tono || 'normal'}`
-    case 'mensaje_carinoso':
-      return `Fase del ciclo: ${ctx.fase || 'desconocida'}\nContexto: ${ctx.mensajeUsuario || 'un mensaje lindo del día'}\nTono: ${ctx.tono || 'normal'}`
-    case 'traductor':
-      return `La pareja dijo: "${ctx.mensajeUsuario}". Traduce qué quiso decir y cómo responder.`
-    case 'insights':
-      return `Datos de la semana: ${JSON.stringify(ctx.datos || {})}`
-    case 'reformulador':
-      return `Queja original: "${ctx.mensajeUsuario}"`
-    default:
-      return ctx.mensajeUsuario || ''
   }
 }
 

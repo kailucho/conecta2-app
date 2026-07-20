@@ -21,6 +21,11 @@ export const CLAVES = {
   sos: 'sos',
   colaSalida: 'colaSalida',
   aprecios: 'aprecios',
+  // Fase 2: cola offline enriquecida y control de migración.
+  colaOperaciones: 'colaOperaciones',
+  migracion: 'migracion',
+  // IDs de interacciones cuya confirmación/respuesta de la pareja ya viste.
+  confirmacionesVistas: 'confirmacionesVistas',
 }
 
 function claveCompleta(clave) {
@@ -170,6 +175,56 @@ export async function actualizarInteraccion(id, cambios) {
   lista[idx] = { ...lista[idx], ...cambios }
   await guardar(CLAVES.interacciones, lista)
   return lista[idx]
+}
+
+/**
+ * Cancela una interacción propia (status funcional 'cancelled', distinto del
+ * syncState de la cola offline).
+ */
+export async function cancelarInteraccion(id) {
+  return actualizarInteraccion(id, { status: 'cancelled' })
+}
+
+// ---------- Cola de operaciones offline (Fase 2) ----------
+//
+// Cada operación: { operationId, entity, action, entityId, payload,
+// attempts, lastError, createdAt, updatedAt }. No se borra hasta que
+// Supabase confirma que la procesó.
+
+export async function agregarOperacion(operacion) {
+  const cola = await obtener(CLAVES.colaOperaciones, [])
+  const ahora = new Date().toISOString()
+  const nueva = {
+    operationId: operacion.operationId || generarId(),
+    entity: operacion.entity,
+    action: operacion.action,
+    entityId: operacion.entityId,
+    payload: operacion.payload,
+    attempts: 0,
+    lastError: null,
+    createdAt: ahora,
+    updatedAt: ahora,
+  }
+  await guardar(CLAVES.colaOperaciones, [...cola, nueva])
+  return nueva
+}
+
+export async function listarOperaciones() {
+  return obtener(CLAVES.colaOperaciones, [])
+}
+
+export async function actualizarOperacion(operationId, cambios) {
+  const cola = await obtener(CLAVES.colaOperaciones, [])
+  const idx = cola.findIndex((op) => op.operationId === operationId)
+  if (idx === -1) return null
+  cola[idx] = { ...cola[idx], ...cambios, updatedAt: new Date().toISOString() }
+  await guardar(CLAVES.colaOperaciones, cola)
+  return cola[idx]
+}
+
+export async function eliminarOperacion(operationId) {
+  const cola = await obtener(CLAVES.colaOperaciones, [])
+  await guardar(CLAVES.colaOperaciones, cola.filter((op) => op.operationId !== operationId))
 }
 
 // ---------- Utilidad de IDs (preparado para Fase 2) ----------

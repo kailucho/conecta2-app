@@ -7,14 +7,16 @@
 //   - Invitar pareja (próximamente) y reiniciar app.
 // ============================================================
 
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { usarApp } from '../contexto/AppContexto.jsx'
 import TarjetaBase from '../componentes/comunes/TarjetaBase.jsx'
 import Toggle from '../componentes/comunes/Toggle.jsx'
 import GraficoAnimoPorFase from '../componentes/ajustes/GraficoAnimoPorFase.jsx'
 import PatronSemanal from '../componentes/ajustes/PatronSemanal.jsx'
-import Insights from '../componentes/ajustes/Insights.jsx'
 import InvitarPareja from '../componentes/ajustes/InvitarPareja.jsx'
+
+// Insights llama a la IA (Edge Function): se separa del chunk principal.
+const Insights = lazy(() => import('../componentes/ajustes/Insights.jsx'))
 import {
   etiquetaTipoRelacion,
   nombresNiveles,
@@ -85,7 +87,9 @@ export default function Ajustes({ irAGuia, seccionObjetivo, alConsumirObjetivo }
         <h2 className="font-titulo text-lg font-bold text-texto">Datos y patrones</h2>
         <GraficoAnimoPorFase />
         {esElla && <PatronSemanal />}
-        <Insights />
+        <Suspense fallback={null}>
+          <Insights />
+        </Suspense>
       </section>
 
       {/* ---------- Perfil ---------- */}

@@ -5,6 +5,12 @@ import {
   guardar,
   migrarVinculacionLegada,
   obtener,
+  agregarInteraccion,
+  cancelarInteraccion,
+  agregarOperacion,
+  listarOperaciones,
+  actualizarOperacion,
+  eliminarOperacion,
 } from './storageService.js'
 
 beforeEach(() => localStorage.clear())
@@ -78,5 +84,41 @@ describe('migrarVinculacionLegada', () => {
     expect((await migrarVinculacionLegada()).migrado).toBe(false)
     expect(await obtener(CLAVES.perfil)).toEqual(perfil)
     expect(await obtener(CLAVES.colaSalida)).toEqual(['real'])
+  })
+})
+
+describe('cancelarInteraccion', () => {
+  it('marca la interacción como cancelled sin tocar las demás', async () => {
+    await agregarInteraccion({ id: 'i1', status: 'pendiente_sync', type: 'mensaje' })
+    await agregarInteraccion({ id: 'i2', status: 'pendiente_sync', type: 'mensaje' })
+    const cancelada = await cancelarInteraccion('i1')
+    expect(cancelada.status).toBe('cancelled')
+    const lista = await obtener(CLAVES.interacciones)
+    expect(lista.find((it) => it.id === 'i1').status).toBe('cancelled')
+    expect(lista.find((it) => it.id === 'i2').status).toBe('pendiente_sync')
+  })
+})
+
+describe('cola de operaciones offline', () => {
+  it('agrega, lista, actualiza y elimina operaciones', async () => {
+    const op = await agregarOperacion({
+      entity: 'interactions',
+      action: 'insert',
+      entityId: 'i1',
+      payload: { hola: 'mundo' },
+    })
+    expect(op.attempts).toBe(0)
+    expect(op.operationId).toBeTruthy()
+
+    let cola = await listarOperaciones()
+    expect(cola).toHaveLength(1)
+
+    const actualizada = await actualizarOperacion(op.operationId, { attempts: 1, lastError: 'boom' })
+    expect(actualizada.attempts).toBe(1)
+    expect(actualizada.lastError).toBe('boom')
+
+    await eliminarOperacion(op.operationId)
+    cola = await listarOperaciones()
+    expect(cola).toHaveLength(0)
   })
 })
