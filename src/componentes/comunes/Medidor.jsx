@@ -16,7 +16,7 @@ function arco(cx, cy, r, desde, hasta) {
   return `M ${ini.x} ${ini.y} A ${r} ${r} 0 ${grande} 1 ${fin.x} ${fin.y}`
 }
 
-export default function Medidor({ valor = 0, max = 10, etiqueta, sublabel }) {
+export default function Medidor({ valor = 0, max = 10, etiqueta, sublabel, ariaLabel }) {
   const cx = 100
   const cy = 100
   const r = 78
@@ -26,8 +26,12 @@ export default function Medidor({ valor = 0, max = 10, etiqueta, sublabel }) {
   const punta = polar(cx, cy, r - 14, angulo)
 
   return (
-    <div className="relative flex flex-col items-center">
-      <svg viewBox="0 0 200 120" className="w-full max-w-[260px]">
+    <div
+      className="relative flex flex-col items-center"
+      role={ariaLabel ? 'img' : undefined}
+      aria-label={ariaLabel}
+    >
+      <svg viewBox="0 0 200 120" className="w-full max-w-[260px]" aria-hidden="true">
         <defs>
           <linearGradient id="medidorArco" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" stopColor="var(--tema-acento-fuerte)" />

@@ -1,7 +1,10 @@
 // ============================================================
 // Onboarding — configuración inicial mínima.
 // Flujo: bienvenida → rol → tipo de relación → fecha última regla →
-//        tono de humor → (solo ella) privacidad hormonal → instalar PWA.
+//        tono de humor → instalar PWA.
+//
+// Privacidad hormonal: siempre 'todo' (se comparte todo con la pareja). No se
+// pregunta ni se puede restringir desde la app.
 //
 // El tema visual se aplica EN VIVO apenas se elige el rol (efecto espejo).
 // Solo se piden los datos imprescindibles; el resto se pide luego en contexto.
@@ -20,21 +23,24 @@ import FechaDiaMesAnio from '../componentes/comunes/FechaDiaMesAnio.jsx'
 import { ESTADOS_VINCULACION } from '../servicios/syncService.js'
 
 const TIPOS_RELACION = [
-  { id: 'casados', emoji: '💍', label: 'Casados', desc: 'Experiencia completa' },
-  { id: 'convivientes', emoji: '🏠', label: 'Convivientes', desc: 'Viven juntos' },
-  { id: 'novios', emoji: '💌', label: 'Enamorados', desc: 'Novios que no conviven' },
+  {
+    id: 'conviven',
+    emoji: '🏠',
+    label: 'Sí, vivimos juntos',
+    desc: 'Misiones del hogar, apoyo cotidiano y planes presenciales.',
+  },
+  {
+    id: 'no_conviven',
+    emoji: '💌',
+    label: 'Aún no vivimos juntos',
+    desc: 'Detalles, mensajes, conexión y planes para verse.',
+  },
 ]
 
 const TONOS = [
   { id: 'suave', emoji: '🌸', label: 'Suave', desc: 'Cariñoso y delicado' },
   { id: 'normal', emoji: '😊', label: 'Normal', desc: 'Divertido y directo' },
   { id: 'sinfiltro', emoji: '🔥', label: 'Sin filtro', desc: 'Humor sin pelos en la lengua' },
-]
-
-const PRIVACIDADES = [
-  { id: 'todo', label: 'Todo', desc: 'Tu pareja ve fases y alertas' },
-  { id: 'solo_fases', label: 'Solo fases', desc: 'Ve la fase, no los detalles' },
-  { id: 'solo_alertas', label: 'Solo alertas', desc: 'Solo lo que tú le avises' },
 ]
 
 export default function Onboarding() {
@@ -46,7 +52,6 @@ export default function Onboarding() {
   const [estadoFecha, setEstadoFecha] = useState('valida')
   const [errorFecha, setErrorFecha] = useState('')
   const [tono, setTono] = useState('normal')
-  const [privacidad, setPrivacidad] = useState('todo')
 
   // Aplica el tema en vivo apenas se elige el rol (efecto espejo).
   useEffect(() => {
@@ -67,7 +72,7 @@ export default function Onboarding() {
       tipoRelacion,
       nombre: '',
       tonoHumor: tono,
-      privacidadHormonal: rol === 'ella' ? privacidad : 'todo',
+      privacidadHormonal: 'todo',
       nubarronDebil: null,
       creadoEl: new Date().toISOString(),
     }
@@ -88,7 +93,7 @@ export default function Onboarding() {
     pedirPermiso()
   }
 
-  const total = rol === 'ella' ? 6 : 5
+  const total = 5
 
   function cambiarFecha(valor, detalle) {
     setFechaRegla(valor)
@@ -199,7 +204,7 @@ export default function Onboarding() {
         {paso === 2 && (
           <div className="animate-aparecer">
             <h2 className="mb-2 font-titulo text-2xl font-bold text-texto">
-              ¿Cómo es su relación?
+              ¿Viven juntos?
             </h2>
             <p className="mb-8 text-texto-2">
               Adaptamos el contenido a su situación. Lo puedes cambiar después.
@@ -241,7 +246,7 @@ export default function Onboarding() {
             <h2 className="mb-2 font-titulo text-2xl font-bold text-texto">
               {rol === 'ella'
                 ? '¿Cuál fue el primer día de tu última menstruación?'
-                : `¿Cuál fue el primer día de la última menstruación de ${comoLlamarPareja(rol, tipoRelacion)}?`}
+                : `¿Cuál fue el primer día de la última menstruación de ${comoLlamarPareja()}?`}
             </h2>
             <p className="mb-2 text-texto-2">
               Elige el día en que comenzó el sangrado, no el día en que terminó.
@@ -308,52 +313,15 @@ export default function Onboarding() {
             </div>
             <BotonGrande
               className="mt-8 w-full"
-              onClick={() => setPaso(rol === 'ella' ? 5 : 6)}
+              onClick={() => setPaso(5)}
             >
               Continuar
             </BotonGrande>
           </div>
         )}
 
-        {/* ---------- Paso 5: Privacidad hormonal (solo ella) ---------- */}
-        {paso === 5 && rol === 'ella' && (
-          <div className="animate-aparecer">
-            <h2 className="mb-2 font-titulo text-2xl font-bold text-texto">
-              Tu privacidad 🔒
-            </h2>
-            <p className="mb-8 text-texto-2">
-              ¿Qué quieres que tu pareja pueda ver de tu ciclo? Tú tienes el
-              control y lo puedes cambiar cuando quieras.
-            </p>
-            <div className="space-y-3">
-              {PRIVACIDADES.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setPrivacidad(p.id)}
-                  className={`flex w-full items-center justify-between rounded-card border-2 p-4 text-left transition-all ${
-                    privacidad === p.id
-                      ? 'border-acento bg-tarjeta-hover'
-                      : 'border-borde bg-tarjeta'
-                  }`}
-                >
-                  <span>
-                    <span className="block font-titulo font-bold text-texto">
-                      {p.label}
-                    </span>
-                    <span className="text-sm text-texto-3">{p.desc}</span>
-                  </span>
-                  {privacidad === p.id && <span className="text-acento">✓</span>}
-                </button>
-              ))}
-            </div>
-            <BotonGrande className="mt-8 w-full" onClick={() => setPaso(6)}>
-              Continuar
-            </BotonGrande>
-          </div>
-        )}
-
-        {/* ---------- Paso 6: Instalar / Finalizar ---------- */}
-        {paso === 6 && (
+        {/* ---------- Paso 5: Instalar / Finalizar ---------- */}
+        {paso === 5 && (
           <PasoFinal
             rol={rol}
             onListo={finalizar}
@@ -362,9 +330,9 @@ export default function Onboarding() {
       </div>
 
       {/* Botón atrás discreto */}
-      {paso > 1 && paso < 6 && (
+      {paso > 1 && paso < 5 && (
         <button
-          onClick={() => setPaso((p) => (p === 6 && rol !== 'ella' ? 4 : p - 1))}
+          onClick={() => setPaso((p) => p - 1)}
           className="mt-4 self-center text-sm text-texto-3"
         >
           ← Atrás

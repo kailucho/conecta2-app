@@ -20,7 +20,7 @@ function sembrarPerfil(estadoVinculacion = 'no_vinculada') {
     partnerId: estadoVinculacion === 'vinculada' ? 'u2' : null,
     estadoVinculacion,
     rol: 'ella',
-    tipoRelacion: 'casados',
+    tipoRelacion: 'conviven',
   }))
 }
 

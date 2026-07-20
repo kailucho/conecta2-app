@@ -20,10 +20,11 @@ const Insights = lazy(() => import('../componentes/ajustes/Insights.jsx'))
 import {
   etiquetaTipoRelacion,
   nombresNiveles,
+  convivenJuntos,
 } from '../datos/lenguaje.js'
 import { NOTA_MEDICA } from '../datos/etapasVida.js'
 
-const TIPOS = ['casados', 'convivientes', 'novios']
+const TIPOS = ['conviven', 'no_conviven']
 const TONOS = [
   { id: 'suave', label: 'Suave 🌸' },
   { id: 'normal', label: 'Normal 😊' },
@@ -43,11 +44,11 @@ export default function Ajustes({ irAGuia, seccionObjetivo, alConsumirObjetivo }
   const [confirmarReinicio, setConfirmarReinicio] = useState(false)
 
   async function cambiarTipo(nuevo) {
-    // Si sube de novios → convivientes/casados, se celebra el compromiso.
-    const eraNovios = perfil.tipoRelacion === 'novios'
-    const sube = eraNovios && nuevo !== 'novios'
+    // Si pasan de no convivir a convivir, se celebra el nuevo capítulo.
+    const noConvivianAntes = convivenJuntos(perfil.tipoRelacion) === false
+    const empiezanAConvivir = noConvivianAntes && nuevo === 'conviven'
     await guardarPerfil({ ...perfil, tipoRelacion: nuevo })
-    if (sube) {
+    if (empiezanAConvivir) {
       setCelebraUpgrade(true)
       setTimeout(() => setCelebraUpgrade(false), 4000)
     }
@@ -61,10 +62,10 @@ export default function Ajustes({ irAGuia, seccionObjetivo, alConsumirObjetivo }
 
       {celebraUpgrade && (
         <div className="animate-aparecer rounded-card bg-acento/15 p-4 text-center">
-          <p className="text-3xl">💍🎉</p>
-          <p className="font-titulo font-bold text-texto">¡Se comprometieron!</p>
+          <p className="text-3xl">🏠🎉</p>
+          <p className="font-titulo font-bold text-texto">¡Ahora viven juntos!</p>
           <p className="text-sm text-texto-2">
-            Felicidades, subieron de nivel en la vida real 💫
+            Se desbloquearon nuevas misiones para compartir el día a día 💫
           </p>
         </div>
       )}
@@ -107,9 +108,9 @@ export default function Ajustes({ irAGuia, seccionObjetivo, alConsumirObjetivo }
 
         <TarjetaBase>
           <p className="mb-2 text-sm font-semibold text-texto">
-            Tipo de relación · {etiquetaTipoRelacion(perfil.tipoRelacion)}
+            ¿Viven juntos? · {etiquetaTipoRelacion(perfil.tipoRelacion)}
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {TIPOS.map((t) => (
               <button
                 key={t}

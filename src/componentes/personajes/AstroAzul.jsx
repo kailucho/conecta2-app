@@ -1,7 +1,13 @@
 // ============================================================
 // Astro Azul 💙 — personaje principal del modo él.
 // Pequeño astro/planeta azul profundo con detalles cian, redondeado y
-// expresivo. Expresiones cálidas y divertidas. Accesorios desbloqueables.
+// expresivo. Expresiones cálidas y divertidas.
+//
+// Accesorios: 'gorra'/'lentes' son desbloqueables por gamificación. Los
+// nuevos ('antena', 'kit_cuidado', 'casco', 'escudo', 'detalle_carinoso') los
+// asigna el radar de peligrosidad según su nivel (ver motor/radarPeligrosidad).
+// La expresión también reacciona brevemente (~4s) a interacciones entrantes
+// de la pareja (hambre, abrazo, buena noticia, etc.), gestionado desde Hoy.jsx.
 // ============================================================
 
 import { EXPRESIONES } from '../../motor/expresiones.js'
@@ -145,6 +151,46 @@ export default function AstroAzul({
           <circle cx="158" cy="112" r="16" />
           <line x1="128" y1="112" x2="142" y2="112" />
         </g>
+      )}
+
+      {/* Radar de peligrosidad 0-2: pose relajada con lentes de sol pequeños */}
+      {accesorios.includes('antena') && (
+        <g stroke="#28c7e8" strokeWidth="4" fill="none">
+          <line x1="150" y1="58" x2="162" y2="34" strokeLinecap="round" />
+          <circle cx="162" cy="30" r="5" fill="#83e4f2" stroke="none" />
+        </g>
+      )}
+
+      {/* Kit de cuidado: snack/detalle cariñoso para niveles medios */}
+      {accesorios.includes('kit_cuidado') && (
+        <g>
+          <rect x="175" y="150" width="22" height="18" rx="3" fill="#f7fbff" stroke="#006dd6" strokeWidth="2" />
+          <path d="M180 150 Q186 140 192 150" fill="none" stroke="#006dd6" strokeWidth="2" />
+        </g>
+      )}
+
+      {/* Casco humorístico para zona delicada / modo legendario */}
+      {accesorios.includes('casco') && (
+        <path
+          d="M78 92 Q135 30 192 92 L192 100 Q135 68 78 100 Z"
+          fill="#83e4f2"
+          opacity="0.55"
+          stroke="#28c7e8"
+          strokeWidth="2"
+        />
+      )}
+
+      {/* Escudo pequeño de "cero discusiones tontas" */}
+      {accesorios.includes('escudo') && (
+        <g transform="translate(28 150)">
+          <path d="M0 0 L18 -6 L18 14 Q9 24 0 14 Z" fill="#006dd6" stroke="#83e4f2" strokeWidth="2" />
+          <path d="M6 6 L9 12 L14 2" fill="none" stroke="#f7fbff" strokeWidth="2" strokeLinecap="round" />
+        </g>
+      )}
+
+      {/* Detalle cariñoso en modo legendario: nunca una expresión de terror */}
+      {accesorios.includes('detalle_carinoso') && (
+        <text x="205" y="150" fontSize="20">💙</text>
       )}
 
       {/* Adornos por expresión */}

@@ -1,27 +1,40 @@
-// Velocímetro de "peligrosidad" — firma visual del modo él. Arco con aguja,
-// score X/10 y frase con humor según fase y tono. Es una guía con humor, NO
-// un juicio sobre la pareja.
+// RADAR DE PELIGROSIDAD 📡 — firma visual del modo él. Arco con aguja, score
+// X/10, nivel y mensaje con humor. "Del día, no de ella 😅": es una guía con
+// humor, NO un juicio sobre la pareja, su personalidad ni su ciclo.
 import Medidor from '../comunes/Medidor.jsx'
 import TarjetaBase from '../comunes/TarjetaBase.jsx'
-import { fraseCabecera } from '../../datos/tiposFase.js'
+import { mensajeRadar, aclaracionRadar } from '../../datos/radarPeligrosidad.js'
 
-export default function Velocimetro({ fase, score, tono, zonaRoja }) {
-  const frase = fraseCabecera(fase.id, tono)
+export default function Velocimetro({ radar, fase, tono, semilla = 0 }) {
+  const { score, nivel, mostrarFase } = radar
+  const mensaje = mensajeRadar(nivel.id, tono, semilla)
+  const etiqueta = mostrarFase && fase ? `Fase ${fase.nombre}` : nivel.estado
 
   return (
     <TarjetaBase className="flex flex-col items-center">
-      <p className="mb-1 text-xs font-bold uppercase tracking-wide text-acento">
-        Peligrosidad
+      <p className="mb-0.5 text-center text-lg font-black uppercase tracking-wide text-acento">
+        Radar de peligrosidad
       </p>
-      <Medidor valor={score} max={10} etiqueta={`Fase ${fase.nombre}`} />
+      <p className="mb-2 text-center text-xs font-semibold text-texto-3">
+        Del día, no de ella 😅
+      </p>
+
+      <Medidor
+        valor={score}
+        max={10}
+        etiqueta={etiqueta}
+        sublabel={`${nivel.emoji} ${nivel.estado}`}
+        ariaLabel={`Radar de peligrosidad: ${score} de 10, ${nivel.estado}`}
+      />
+
       <p className="mt-2 text-center font-titulo text-lg font-bold text-texto">
-        {frase}
+        {nivel.emoji} {nivel.idea}
       </p>
-      {zonaRoja && (
-        <span className="mt-2 rounded-pill bg-peligro/15 px-3 py-1 text-xs font-bold text-peligro">
-          🔴 Zona Roja · máxima ternura
-        </span>
-      )}
+      <p className="mt-1 text-center text-sm text-texto-2">{mensaje}</p>
+
+      <p className="mt-3 text-center text-[11px] leading-snug text-texto-3">
+        {aclaracionRadar()}
+      </p>
     </TarjetaBase>
   )
 }

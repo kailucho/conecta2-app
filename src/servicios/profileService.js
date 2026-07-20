@@ -5,6 +5,7 @@
 // ============================================================
 
 import { supabase, supabaseConfigurado } from './supabaseClient.js'
+import { normalizarTipoRelacion } from '../datos/lenguaje.js'
 
 /** Perfil remoto (fila `profiles`) -> forma local usada por AppContexto. */
 export function perfilRemotoALocal(fila, perfilLocalPrevio = {}) {
@@ -14,7 +15,7 @@ export function perfilRemotoALocal(fila, perfilLocalPrevio = {}) {
     userId: fila.id,
     nombre: fila.display_name || perfilLocalPrevio.nombre || '',
     rol: fila.app_role,
-    tipoRelacion: fila.relationship_type,
+    tipoRelacion: normalizarTipoRelacion(fila.relationship_type),
     tonoHumor: fila.humor_tone,
     privacidadHormonal: fila.hormonal_privacy,
     legacyLocalUserId: fila.legacy_local_user_id || perfilLocalPrevio.legacyLocalUserId || null,
@@ -27,7 +28,7 @@ function perfilLocalARemoto(perfil, userId) {
     id: userId,
     display_name: perfil.nombre || null,
     app_role: perfil.rol,
-    relationship_type: perfil.tipoRelacion || null,
+    relationship_type: normalizarTipoRelacion(perfil.tipoRelacion) || null,
     humor_tone: perfil.tonoHumor || null,
     hormonal_privacy: perfil.privacidadHormonal || null,
     legacy_local_user_id: perfil.legacyLocalUserId || perfil.userId || null,

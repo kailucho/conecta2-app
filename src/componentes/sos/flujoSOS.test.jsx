@@ -13,7 +13,7 @@ beforeEach(() => {
     partnerId: null,
     estadoVinculacion: 'no_vinculada',
     rol: 'ella',
-    tipoRelacion: 'casados',
+    tipoRelacion: 'conviven',
   }))
 })
 

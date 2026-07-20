@@ -6,11 +6,12 @@
 // centro de interacciones (bottom sheet) que abre ＋ o el personaje.
 // ============================================================
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usarApp } from '../contexto/AppContexto.jsx'
 import { usarCiclo } from '../contexto/usarCiclo.js'
 import { diaDelAnio } from '../motor/fechas.js'
 import { comoLlamarParejaCap } from '../datos/lenguaje.js'
+import { calcularRadarPeligrosidad } from '../motor/radarPeligrosidad.js'
 import EncabezadoHoy from '../componentes/comunes/EncabezadoHoy.jsx'
 import Velocimetro from '../componentes/hoy/Velocimetro.jsx'
 import ClimaInterno from '../componentes/hoy/ClimaInterno.jsx'
@@ -20,7 +21,8 @@ import BotonSOS from '../componentes/comunes/BotonSOS.jsx'
 import TarjetaBase from '../componentes/comunes/TarjetaBase.jsx'
 import Personaje from '../componentes/personajes/Personaje.jsx'
 import FondoDecorativo from '../componentes/comunes/FondoDecorativo.jsx'
-import { EXPRESIONES, expresionPorFase } from '../motor/expresiones.js'
+import { EXPRESIONES, expresionPorFase, expresionPorAccion } from '../motor/expresiones.js'
+import { interaccionEntranteMasReciente } from '../motor/interacciones.js'
 import BandejaPareja from '../componentes/transversales/BandejaPareja.jsx'
 import ConfirmacionRespuesta from '../componentes/transversales/ConfirmacionRespuesta.jsx'
 import SugerenciaRegla from '../componentes/hoy/SugerenciaRegla.jsx'
@@ -30,7 +32,7 @@ import MensajeLibre from '../componentes/comunicacion/MensajeLibre.jsx'
 import { parejaVinculada } from '../servicios/syncService.js'
 
 export default function Hoy({ abrirSOS, irA }) {
-  const { perfil, config, solicitarVinculacion } = usarApp()
+  const { perfil, config, interacciones, solicitarVinculacion } = usarApp()
   const ciclo = usarCiclo()
   const semilla = diaDelAnio()
   const esElla = perfil.rol === 'ella'
@@ -40,6 +42,7 @@ export default function Hoy({ abrirSOS, irA }) {
   const [mensajeAbierto, setMensajeAbierto] = useState(false)
   const [reaccion, setReaccion] = useState(null) // { expresion, key }
   const timerReaccion = useRef(null)
+  const ultimaInteraccionVista = useRef(undefined) // undefined = aún sin inicializar
 
   // Privacidad: en modo él, si la pareja restringió a "solo alertas", no se
   // muestra la fase en el encabezado. (En modo ella siempre ve su propia info.)
@@ -56,6 +59,36 @@ export default function Hoy({ abrirSOS, irA }) {
     setReaccion({ expresion, key: Date.now() })
     timerReaccion.current = setTimeout(() => setReaccion(null), 4000)
   }
+
+  // Radar de peligrosidad (modo él): combina alertas/ánimo declarados por la
+  // pareja con el score del ciclo, respetando la privacidad hormonal.
+  const radar = calcularRadarPeligrosidad({
+    scoreCiclo: ciclo.hayDatos && !ciclo.menopausia ? ciclo.score : null,
+    interacciones,
+    userId: perfil.userId,
+    partnerId: perfil.partnerId,
+    privacidadHormonal: perfil.privacidadHormonal,
+  })
+  const mostrarRadar = !esElla && !ciclo.menopausia && (ciclo.hayDatos || radar.hayInsumos)
+  const mostrarSinDatos = !ciclo.menopausia && !ciclo.hayDatos && !mostrarRadar
+
+  // Astro Azul reacciona brevemente cuando llega una interacción NUEVA de la
+  // pareja (no en cada render, y no se repite por el mismo id).
+  useEffect(() => {
+    const masReciente = interaccionEntranteMasReciente(interacciones, perfil.userId, perfil.partnerId)
+    if (!masReciente) return
+    if (ultimaInteraccionVista.current === undefined) {
+      // Primer render con datos: solo memoriza, no reacciona a historial viejo.
+      ultimaInteraccionVista.current = masReciente.id
+      return
+    }
+    if (masReciente.id !== ultimaInteraccionVista.current) {
+      ultimaInteraccionVista.current = masReciente.id
+      const expresionReaccion = expresionPorAccion(masReciente.actionId)
+      if (expresionReaccion) reaccionar(expresionReaccion)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interacciones, perfil.userId, perfil.partnerId])
 
   const expresionBase =
     esElla && ciclo.hayDatos && !ciclo.menopausia
@@ -109,6 +142,7 @@ export default function Hoy({ abrirSOS, irA }) {
             rol={perfil.rol}
             tamano={150}
             expresion={expresionMostrada}
+            accesorios={!esElla && mostrarRadar ? radar.accesorios : []}
             alTocar={abrirCentroOExplicar}
           />
         </div>
@@ -116,14 +150,18 @@ export default function Hoy({ abrirSOS, irA }) {
       <EstadoActivoChip />
 
       <div className="mt-3 space-y-3">
-        {/* Sin datos de ciclo aún */}
-        {!ciclo.hayDatos && !ciclo.menopausia && (
+        {/* Sin datos de ciclo aún (y, en modo él, sin alertas/ánimo de la pareja) */}
+        {mostrarSinDatos && (
           <TarjetaBase>
             <p className="text-texto-2">
-              Todavía no tenemos registrado el primer día de la última menstruación.
-              Ve a la pestaña{' '}
-              <strong className="text-texto">Mes 📅</strong> para registrarla y
-              activar el cálculo de fases.
+              {esElla
+                ? <>Todavía no tenemos registrado el primer día de la última
+                    menstruación. Ve a la pestaña{' '}
+                    <strong className="text-texto">Mes 📅</strong> para
+                    registrarla y activar el cálculo de fases.</>
+                : <>Aún no hay señales para el radar de hoy. En cuanto tu
+                    pareja comparta cómo se siente, o registre su ciclo, el
+                    radar se activa.</>}
             </p>
           </TarjetaBase>
         )}
@@ -142,23 +180,20 @@ export default function Hoy({ abrirSOS, irA }) {
         )}
 
         {/* Resumen del día según rol */}
-        {ciclo.hayDatos && !ciclo.menopausia && (
-          <>
-            {esElla ? (
-              <ClimaInterno
-                fase={ciclo.fase}
-                tono={perfil.tonoHumor}
-                zonaRoja={ciclo.zonaRoja}
-              />
-            ) : (
-              <Velocimetro
-                fase={ciclo.fase}
-                score={ciclo.score}
-                tono={perfil.tonoHumor}
-                zonaRoja={ciclo.zonaRoja}
-              />
-            )}
-          </>
+        {esElla && ciclo.hayDatos && !ciclo.menopausia && (
+          <ClimaInterno
+            fase={ciclo.fase}
+            tono={perfil.tonoHumor}
+            zonaRoja={ciclo.zonaRoja}
+          />
+        )}
+        {mostrarRadar && (
+          <Velocimetro
+            radar={radar}
+            fase={radar.mostrarFase ? ciclo.fase : null}
+            tono={perfil.tonoHumor}
+            semilla={semilla}
+          />
         )}
 
         {/* Mensajes recibidos de la pareja (null si no hay) */}

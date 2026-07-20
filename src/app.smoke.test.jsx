@@ -38,7 +38,7 @@ function sembrarPerfil(rol) {
       partnerId: 'p-test',
       estadoVinculacion: 'vinculada',
       rol,
-      tipoRelacion: 'casados',
+      tipoRelacion: 'conviven',
       nombre: 'Test',
       tonoHumor: 'normal',
       privacidadHormonal: 'todo',

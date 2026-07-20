@@ -23,14 +23,8 @@ import {
   NOTA_MEDICA,
 } from '../datos/etapasVida.js'
 
-const PRIVACIDADES = [
-  { id: 'todo', label: 'Todo' },
-  { id: 'solo_fases', label: 'Solo fases' },
-  { id: 'solo_alertas', label: 'Solo alertas' },
-]
-
 export default function Mes() {
-  const { perfil, ciclo, actualizarCiclo, guardarPerfil } = usarApp()
+  const { perfil, ciclo, actualizarCiclo } = usarApp()
   const info = usarCiclo()
   const esElla = perfil.rol === 'ella'
   const [confirmado, setConfirmado] = useState(false)
@@ -64,9 +58,6 @@ export default function Mes() {
   }
   async function cambiarEtapa(id) {
     await actualizarCiclo({ etapaVida: id })
-  }
-  async function cambiarPrivacidad(id) {
-    await guardarPerfil({ ...perfil, privacidadHormonal: id })
   }
 
   const fechaUltima = ultimaRegla(ciclo)
@@ -357,31 +348,6 @@ export default function Mes() {
           </p>
         )}
       </TarjetaBase>
-
-      {/* Privacidad hormonal (solo ella) */}
-      {esElla && (
-        <TarjetaBase>
-          <p className="mb-1 font-titulo font-bold text-texto">
-            🔒 ¿Qué ve tu pareja?
-          </p>
-          <p className="mb-2 text-xs text-texto-3">Tú tienes el control.</p>
-          <div className="flex gap-2">
-            {PRIVACIDADES.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => cambiarPrivacidad(p.id)}
-                className={`flex-1 rounded-pill border px-2 py-2 text-xs font-bold transition-all ${
-                  perfil.privacidadHormonal === p.id
-                    ? 'border-acento bg-acento text-white'
-                    : 'border-borde bg-tarjeta text-texto-2'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </TarjetaBase>
-      )}
 
       {/* Etapa de vida */}
       <SelectorEtapa etapa={ciclo.etapaVida} onCambiar={cambiarEtapa} />

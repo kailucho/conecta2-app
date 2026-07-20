@@ -1,61 +1,68 @@
 // ============================================================
-// lenguaje — adaptación de textos según rol y tipo de relación.
+// lenguaje — adaptación de textos según convivencia de la pareja.
 //
-// Regla: todo el contenido usa lenguaje neutral ("tu pareja") y solo dice
-// "esposa/esposo" cuando el tipo de relación es "casados". Los niveles de
-// gamificación se renombran según el tipo.
+// Regla: todo el contenido usa lenguaje neutral ("tu pareja"), sin depender
+// del estado civil. La clasificación se redujo a una decisión binaria de
+// convivencia: 'conviven' | 'no_conviven'. Los valores antiguos ('casados',
+// 'convivientes', 'novios') se siguen aceptando vía normalizarTipoRelacion()
+// para no romper perfiles locales ni registros ya guardados en Supabase.
 // ============================================================
 
 /**
- * Devuelve cómo llamar a la pareja del usuario, según rol y tipo de relación.
- * rol = rol de QUIEN usa la app; la pareja es del rol opuesto.
+ * Normaliza cualquier valor histórico o actual de tipoRelacion al esquema
+ * canónico binario. Es la única fuente de esta lógica: úsala al hidratar
+ * perfiles locales y remotos en vez de duplicar el mapeo en componentes.
+ *
+ *   casados, convivientes, conviven       → 'conviven'
+ *   novios, no_conviven                   → 'no_conviven'
+ *   cualquier otro valor (incluido null)  → se devuelve tal cual (no se inventa)
  */
-export function comoLlamarPareja(rol, tipoRelacion) {
-  const parejaEsElla = rol === 'el' // si yo soy él, mi pareja es ella
-  if (tipoRelacion === 'casados') {
-    return parejaEsElla ? 'tu esposa' : 'tu esposo'
+export function normalizarTipoRelacion(valor) {
+  if (valor === 'casados' || valor === 'convivientes' || valor === 'conviven') {
+    return 'conviven'
   }
-  if (tipoRelacion === 'novios') {
-    return parejaEsElla ? 'tu chica' : 'tu chico'
+  if (valor === 'novios' || valor === 'no_conviven') {
+    return 'no_conviven'
   }
-  // convivientes u otro
+  return valor
+}
+
+/**
+ * Devuelve cómo llamar a la pareja del usuario. Siempre neutral.
+ */
+export function comoLlamarPareja() {
   return 'tu pareja'
 }
 
 /**
  * Versión con mayúscula inicial.
  */
-export function comoLlamarParejaCap(rol, tipoRelacion) {
-  const t = comoLlamarPareja(rol, tipoRelacion)
-  return t.charAt(0).toUpperCase() + t.slice(1)
+export function comoLlamarParejaCap() {
+  return 'Tu pareja'
 }
 
 /**
- * Nombres de los 4 niveles de gamificación, adaptados a rol y tipo.
+ * Nombres de los 4 niveles de gamificación. Neutrales, no dependen de rol
+ * ni tipo de relación (se mantiene la firma por compatibilidad de llamadas).
  */
-export function nombresNiveles(rol, tipoRelacion) {
-  const esNovios = tipoRelacion === 'novios'
-  const pro = rol === 'el'
-    ? (esNovios ? 'Novio Pro' : 'Esposo Pro')
-    : (esNovios ? 'Novia Pro' : 'Esposa Pro')
-  const leyenda = esNovios ? 'Leyenda del Amor' : 'Leyenda del Matrimonio'
-  return ['Novato', 'Aprendiz', pro, leyenda]
+export function nombresNiveles() {
+  return ['Novato', 'Aprendiz', 'Pareja Pro', 'Leyenda de la Conexión']
 }
 
 /**
- * Etiqueta corta del tipo de relación (para Ajustes).
+ * Etiqueta corta de la convivencia (para Ajustes). Acepta valores antiguos.
  */
 export function etiquetaTipoRelacion(tipoRelacion) {
   return {
-    casados: '💍 Casados',
-    convivientes: '🏠 Convivientes',
-    novios: '💌 Enamorados',
-  }[tipoRelacion] || 'En pareja'
+    conviven: '🏠 Viven juntos',
+    no_conviven: '💌 Aún no viven juntos',
+  }[normalizarTipoRelacion(tipoRelacion)] || 'En pareja'
 }
 
 /**
  * ¿La pareja convive con el usuario? (afecta misiones, kit de regla, citas).
+ * Reconoce valores nuevos y antiguos.
  */
 export function convivenJuntos(tipoRelacion) {
-  return tipoRelacion === 'casados' || tipoRelacion === 'convivientes'
+  return normalizarTipoRelacion(tipoRelacion) === 'conviven'
 }

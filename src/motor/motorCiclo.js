@@ -224,9 +224,13 @@ export function predecirProximas(fechaUltimaRegla, config, cuantas = 2) {
 }
 
 /**
- * Puntaje 0-10 para el velocímetro ("peligrosidad" en modo él) o para modular
- * el Clima Interno (modo ella). Alto cerca de la regla y en Zona Roja; bajo en
- * folicular. Es una guía con humor, NO un diagnóstico.
+ * Puntaje 0-10 derivado únicamente de la fase del ciclo. Es SOLO una señal
+ * entre varias del Radar de Peligrosidad (ver motor/radarPeligrosidad.js),
+ * que también pondera alertas de estado y ánimo declarados por la pareja, y
+ * respeta la privacidad 'solo_alertas' (ignora este score por completo). Se
+ * usa también para modular el Clima Interno (modo ella). Alto cerca de la
+ * regla y en Zona Roja; bajo en folicular. Es una guía con humor, NO un
+ * diagnóstico ni un juicio sobre la pareja.
  */
 export function scorePeligrosidad(dia, config) {
   const fase = obtenerFase(dia, config)

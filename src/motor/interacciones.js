@@ -49,3 +49,16 @@ export function resolverInteraccion(it) {
       return { emoji: '💌', texto: 'Te envió algo', respuestas: RESPUESTAS_GENERICAS }
   }
 }
+
+/**
+ * Devuelve la interacción entrante (enviada por partnerId al userId) más
+ * reciente por createdAt, o null si no hay ninguna. La usa Astro Azul para
+ * reaccionar brevemente solo ante interacciones realmente nuevas.
+ */
+export function interaccionEntranteMasReciente(interacciones, userId, partnerId) {
+  const entrantes = interacciones.filter(
+    (it) => it.receiverId === userId && it.senderId === partnerId,
+  )
+  if (entrantes.length === 0) return null
+  return entrantes.reduce((a, b) => (new Date(a.createdAt) > new Date(b.createdAt) ? a : b))
+}

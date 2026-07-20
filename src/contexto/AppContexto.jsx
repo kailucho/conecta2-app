@@ -32,6 +32,7 @@ import { suscribirRealtime, listarRemotas } from '@/servicios/interactionReposit
 import { resumenPareja } from '@/servicios/gamificationRepository.js'
 import { calcularNivel } from '@/motor/gamificacion.js'
 import { publicarSnapshot } from '@/servicios/cycleShareService.js'
+import { normalizarTipoRelacion } from '@/datos/lenguaje.js'
 
 const AppContexto = createContext(null)
 
@@ -155,7 +156,11 @@ export function ProveedorApp({ children }) {
       dispatch({
         tipo: 'HIDRATAR',
         datos: {
-          perfil,
+          // Normaliza perfiles locales antiguos (casados/convivientes/novios)
+          // al esquema binario de convivencia sin duplicar la lógica.
+          perfil: perfil
+            ? { ...perfil, tipoRelacion: normalizarTipoRelacion(perfil.tipoRelacion) }
+            : perfil,
           config: { ...CONFIG_POR_DEFECTO, ...config },
           ciclo: { ...CICLO_POR_DEFECTO, ...ciclo },
           gamificacion: { ...GAMIFICACION_POR_DEFECTO, ...gamificacion },

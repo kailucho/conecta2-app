@@ -54,6 +54,14 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    // Evita que el dev server se caiga si un .zip/.7z queda bloqueado por
+    // otro proceso (antivirus, sincronización, etc.) mientras se observa
+    // el directorio del proyecto.
+    watch: {
+      ignored: ['**/*.zip', '**/*.7z', '**/*.rar'],
+    },
+  },
   build: {
     rollupOptions: {
       output: {

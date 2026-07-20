@@ -30,7 +30,7 @@ function sembrar() {
       partnerId: 'u-other',
       estadoVinculacion: 'vinculada',
       rol: 'ella',
-      tipoRelacion: 'casados',
+      tipoRelacion: 'conviven',
       nombre: 'Yo',
       tonoHumor: 'normal',
       privacidadHormonal: 'todo',
@@ -47,7 +47,7 @@ function sembrarSinPareja() {
       partnerId: null,
       estadoVinculacion: 'no_vinculada',
       rol: 'ella',
-      tipoRelacion: 'casados',
+      tipoRelacion: 'conviven',
     }),
   )
 }
