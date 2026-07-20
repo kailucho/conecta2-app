@@ -19,7 +19,7 @@ import { accionPorId } from '../../datos/accionesRapidas.js'
 import { notificar, vibrar } from '../../servicios/notificaciones.js'
 
 export default function TarjetaParaHoy({ semilla, faseId, hayDatos, onReaccion }) {
-  const { perfil, config, crearInteraccion } = usarApp()
+  const { perfil, config, enviarInteraccionPareja } = usarApp()
 
   const conviven = convivenJuntos(perfil.tipoRelacion)
   const contenido = contenidoParaHoy({ semilla, faseId, hayDatos, conviven })
@@ -33,16 +33,14 @@ export default function TarjetaParaHoy({ semilla, faseId, hayDatos, onReaccion }
   async function enviarSugerencia() {
     const actionId = contenido.tipo === 'pregunta' ? 'pregunta_conexion' : 'cita'
     const def = accionPorId(actionId)
-    await crearInteraccion({
-      coupleId: perfil.coupleId,
-      senderId: perfil.userId,
-      receiverId: perfil.partnerId,
+    const resultado = await enviarInteraccionPareja({
       type: 'quick_action',
       actionId,
       category: 'gesture',
       note: contenido.texto,
       valencia: 1,
-    })
+    }, { tipo: 'quick_action', actionId, note: contenido.texto })
+    if (!resultado.ok) return
     notificar(def?.notif || 'Tu pareja te envió algo 💌', {
       ocultarSensible: !config.notifSensibles,
     })

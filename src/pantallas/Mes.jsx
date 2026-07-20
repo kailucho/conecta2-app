@@ -9,11 +9,12 @@ import { usarApp } from '../contexto/AppContexto.jsx'
 import { usarCiclo, ultimaRegla } from '../contexto/usarCiclo.js'
 import { generarId } from '../servicios/storageService.js'
 import { recalcularPromedio } from '../motor/motorCiclo.js'
-import { claveDia, fechaLarga } from '../motor/fechas.js'
+import { claveDia, esFechaISOValida, fechaLarga } from '../motor/fechas.js'
 import TarjetaBase from '../componentes/comunes/TarjetaBase.jsx'
 import BotonGrande from '../componentes/comunes/BotonGrande.jsx'
 import Calendario from '../componentes/mes/Calendario.jsx'
 import RegistroSintomas from '../componentes/mes/RegistroSintomas.jsx'
+import FechaDiaMesAnio from '../componentes/comunes/FechaDiaMesAnio.jsx'
 import {
   MODOS_FERTILIDAD,
   ETAPAS_VIDA,
@@ -33,6 +34,11 @@ export default function Mes() {
   const info = usarCiclo()
   const esElla = perfil.rol === 'ella'
   const [confirmado, setConfirmado] = useState(false)
+  const [editandoFecha, setEditandoFecha] = useState(false)
+  const [fechaManual, setFechaManual] = useState('')
+  const [estadoFecha, setEstadoFecha] = useState('vacia')
+  const [errorFecha, setErrorFecha] = useState('')
+  const [confirmarCorreccion, setConfirmarCorreccion] = useState(false)
 
   async function registrarReglaHoy() {
     const hoy = claveDia(new Date())
@@ -64,6 +70,81 @@ export default function Mes() {
   }
 
   const fechaUltima = ultimaRegla(ciclo)
+  const hoy = claveDia(new Date())
+
+  function cambiarFechaManual(valor, detalle) {
+    setFechaManual(valor)
+    setEstadoFecha(detalle?.estado || (valor ? 'valida' : 'vacia'))
+    setErrorFecha('')
+  }
+
+  function fechaManualValida() {
+    if (!fechaManual) {
+      setErrorFecha(
+        estadoFecha === 'invalida'
+          ? 'Ingresa una fecha válida.'
+          : 'Completa el día, mes y año.',
+      )
+      return false
+    }
+    if (!esFechaISOValida(fechaManual)) {
+      setErrorFecha('Ingresa una fecha válida.')
+      return false
+    }
+    if (fechaManual > hoy) {
+      setErrorFecha('El primer día de la última menstruación no puede estar en el futuro.')
+      return false
+    }
+    return true
+  }
+
+  async function prepararGuardadoManual() {
+    if (!fechaManualValida()) return
+    if (fechaUltima) {
+      setConfirmarCorreccion(true)
+      return
+    }
+    await aplicarFechaManual(false)
+  }
+
+  async function aplicarFechaManual(esCorreccion = true) {
+    const registros = [...(ciclo.registrosRegla || [])]
+    if (esCorreccion && registros.length > 0) {
+      const indiceUltimo = registros.reduce((mejor, registro, indice) => {
+        if (!registro.fechaInicio) return mejor
+        if (mejor === -1 || registro.fechaInicio > registros[mejor].fechaInicio) return indice
+        return mejor
+      }, -1)
+      if (indiceUltimo >= 0) {
+        // Conserva el id y la autoría original; registra aparte quién corrigió.
+        // En una sincronización futura, el rol ella mantiene prioridad conceptual.
+        registros[indiceUltimo] = {
+          ...registros[indiceUltimo],
+          fechaInicio: fechaManual,
+          corregidoPor: perfil.userId,
+          rolCorreccion: perfil.rol,
+          corregidoEl: new Date().toISOString(),
+        }
+      }
+    } else {
+      registros.push({
+        id: generarId(),
+        fechaInicio: fechaManual,
+        registradoPor: perfil.userId,
+        rolRegistro: perfil.rol,
+      })
+    }
+
+    const stats = recalcularPromedio(registros)
+    await actualizarCiclo({ registrosRegla: registros, ...stats })
+    setConfirmarCorreccion(false)
+    setEditandoFecha(false)
+    setFechaManual('')
+    setEstadoFecha('vacia')
+    setErrorFecha('')
+    setConfirmado(true)
+    setTimeout(() => setConfirmado(false), 2500)
+  }
 
   // ---------- Etapa menopausia: sin calendario ----------
   if (ciclo.etapaVida === 'menopausia') {
@@ -89,34 +170,104 @@ export default function Mes() {
 
       {/* Registro de regla */}
       <TarjetaBase>
-        {esElla ? (
+        {!fechaUltima && (
+          <p className="mb-3 font-titulo font-bold text-texto">
+            Ingresa el primer día de la última menstruación
+          </p>
+        )}
+
+        {fechaUltima && !editandoFecha && (
           <>
-            <BotonGrande className="w-full" onClick={registrarReglaHoy}>
-              🩸 Mi regla empezó hoy
-            </BotonGrande>
-            {confirmado && (
-              <p className="mt-2 text-center text-sm text-exito">
-                ✓ Registrado. Recalculamos tu ciclo 💗
-              </p>
-            )}
-          </>
-        ) : (
-          <>
-            <p className="mb-2 text-sm text-texto-2">
-              ¿Te enteraste que empezó su regla hoy? Puedes registrarlo (ella
-              tiene la última palabra para corregir).
+            <p className="text-center text-sm text-texto-2">
+              Último inicio registrado:{' '}
+              <strong className="capitalize text-texto">{fechaLarga(fechaUltima)}</strong>
             </p>
-            <BotonGrande variante="suave" className="w-full" onClick={registrarReglaHoy}>
-              🩸 Registrar "empezó hoy"
-            </BotonGrande>
-            {confirmado && (
-              <p className="mt-2 text-center text-sm text-exito">✓ Registrado</p>
-            )}
+            <button
+              onClick={() => {
+                setFechaManual(fechaUltima)
+                setEstadoFecha('valida')
+                setErrorFecha('')
+                setEditandoFecha(true)
+              }}
+              className="mt-3 w-full rounded-pill border border-borde py-2.5 text-sm font-bold text-acento"
+            >
+              Corregir último inicio
+            </button>
           </>
         )}
-        {fechaUltima && (
-          <p className="mt-2 text-center text-xs text-texto-3">
-            Última regla registrada: {fechaLarga(fechaUltima)}
+
+        {(!fechaUltima || editandoFecha) && (
+          <div className="space-y-3">
+            {fechaUltima && (
+              <p className="font-titulo font-bold text-texto">Corregir último inicio</p>
+            )}
+            <FechaDiaMesAnio
+              value={fechaManual}
+              onChange={cambiarFechaManual}
+              max={hoy}
+              error={errorFecha}
+            />
+            <BotonGrande className="w-full" onClick={prepararGuardadoManual}>
+              {fechaUltima ? 'Revisar corrección' : 'Guardar primer día'}
+            </BotonGrande>
+            {editandoFecha && (
+              <button
+                onClick={() => {
+                  setEditandoFecha(false)
+                  setConfirmarCorreccion(false)
+                  setErrorFecha('')
+                }}
+                className="w-full text-sm text-texto-3"
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+        )}
+
+        {confirmarCorreccion && (
+          <div className="mt-3 rounded-xl border border-alerta/50 bg-alerta/10 p-3">
+            <p className="text-sm text-texto">
+              ¿Confirmas que deseas reemplazar la fecha del último inicio registrado?
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => setConfirmarCorreccion(false)}
+                className="flex-1 rounded-pill border border-borde py-2 text-sm font-bold text-texto-2"
+              >
+                Volver
+              </button>
+              <button
+                onClick={() => aplicarFechaManual(true)}
+                className="flex-1 rounded-pill bg-acento py-2 text-sm font-bold text-white"
+              >
+                Sí, corregir
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-3 border-t border-borde pt-3">
+          {esElla ? (
+            <BotonGrande variante="suave" className="w-full" onClick={registrarReglaHoy}>
+              🩸 Mi regla empezó hoy
+            </BotonGrande>
+          ) : (
+            <>
+              <p className="mb-2 text-sm text-texto-2">
+                Si sabes que comenzó hoy, puedes registrarlo. Ella mantiene la
+                prioridad para corregir el dato.
+              </p>
+              <BotonGrande variante="suave" className="w-full" onClick={registrarReglaHoy}>
+                🩸 Registrar “empezó hoy”
+              </BotonGrande>
+            </>
+          )}
+        </div>
+
+        {confirmado && (
+          <p className="mt-2 text-center text-sm text-exito">
+            ✓ Registrado. Recalculamos el ciclo.
           </p>
         )}
       </TarjetaBase>
@@ -144,7 +295,8 @@ export default function Mes() {
       ) : (
         <TarjetaBase>
           <p className="text-texto-2">
-            Registra la última regla para ver el calendario con las fases.
+            Registra el primer día de la última menstruación para ver el calendario
+            con las fases.
           </p>
         </TarjetaBase>
       )}

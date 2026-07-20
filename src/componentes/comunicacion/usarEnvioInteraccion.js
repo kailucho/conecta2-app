@@ -6,24 +6,27 @@ import { usarPuntos } from '../../contexto/usarPuntos.js'
 import { notificar, vibrar } from '../../servicios/notificaciones.js'
 
 export function usarEnvioInteraccion() {
-  const { perfil, config, crearInteraccion } = usarApp()
+  const { config, enviarInteraccionPareja } = usarApp()
   const { otorgar } = usarPuntos()
 
   // accion: objeto de ACCIONES_RAPIDAS. opts: { nota, claveAntiSpam, puntos }.
   return async function enviarAccion(accion, opts = {}) {
     const { nota = null, claveAntiSpam = `accion:${accion.id}`, puntos = 5 } = opts
-    await crearInteraccion({
-      coupleId: perfil.coupleId,
-      senderId: perfil.userId,
-      receiverId: perfil.partnerId,
+    const resultado = await enviarInteraccionPareja({
       type: 'quick_action',
       actionId: accion.id,
       category: accion.categoria,
       note: (nota && nota.trim()) || null,
       valencia: 1,
+    }, {
+      tipo: 'quick_action',
+      actionId: accion.id,
+      note: (nota && nota.trim()) || null,
     })
+    if (!resultado.ok) return resultado
     await otorgar(puntos, claveAntiSpam)
     notificar(accion.notif, { ocultarSensible: !config.notifSensibles })
     vibrar([30], config.vibracion)
+    return resultado
   }
 }

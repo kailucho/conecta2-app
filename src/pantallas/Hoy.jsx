@@ -24,12 +24,14 @@ import BandejaPareja from '../componentes/transversales/BandejaPareja.jsx'
 import BarraComunicacion from '../componentes/comunicacion/BarraComunicacion.jsx'
 import CentroInteracciones from '../componentes/comunicacion/CentroInteracciones.jsx'
 import MensajeLibre from '../componentes/comunicacion/MensajeLibre.jsx'
+import { parejaVinculada } from '../servicios/syncService.js'
 
 export default function Hoy({ abrirSOS, irA }) {
-  const { perfil, config } = usarApp()
+  const { perfil, config, solicitarVinculacion } = usarApp()
   const ciclo = usarCiclo()
   const semilla = diaDelAnio()
   const esElla = perfil.rol === 'ella'
+  const vinculada = parejaVinculada(perfil)
 
   const [centroAbierto, setCentroAbierto] = useState(false)
   const [mensajeAbierto, setMensajeAbierto] = useState(false)
@@ -63,6 +65,22 @@ export default function Hoy({ abrirSOS, irA }) {
     setMensajeAbierto(true)
   }
 
+  function abrirCentroOExplicar() {
+    if (!vinculada) {
+      solicitarVinculacion({ tipo: 'explorar_interacciones' })
+      return
+    }
+    setCentroAbierto(true)
+  }
+
+  function abrirMensajeOExplicar() {
+    if (!vinculada) {
+      solicitarVinculacion({ tipo: 'mensaje', note: null })
+      return
+    }
+    setMensajeAbierto(true)
+  }
+
   return (
     <div className="animate-aparecer">
       <EncabezadoHoy
@@ -86,7 +104,7 @@ export default function Hoy({ abrirSOS, irA }) {
             rol={perfil.rol}
             tamano={150}
             expresion={expresionMostrada}
-            alTocar={() => setCentroAbierto(true)}
+            alTocar={abrirCentroOExplicar}
           />
         </div>
       </div>
@@ -97,7 +115,8 @@ export default function Hoy({ abrirSOS, irA }) {
         {!ciclo.hayDatos && !ciclo.menopausia && (
           <TarjetaBase>
             <p className="text-texto-2">
-              Todavía no tenemos la fecha de la última regla. Ve a la pestaña{' '}
+              Todavía no tenemos registrado el primer día de la última menstruación.
+              Ve a la pestaña{' '}
               <strong className="text-texto">Mes 📅</strong> para registrarla y
               activar el cálculo de fases.
             </p>
@@ -151,8 +170,8 @@ export default function Hoy({ abrirSOS, irA }) {
 
       {/* Barra de comunicación fija + sheets */}
       <BarraComunicacion
-        alAbrirCentro={() => setCentroAbierto(true)}
-        alAbrirMensaje={() => setMensajeAbierto(true)}
+        alAbrirCentro={abrirCentroOExplicar}
+        alAbrirMensaje={abrirMensajeOExplicar}
         onReaccion={reaccionar}
       />
       <CentroInteracciones

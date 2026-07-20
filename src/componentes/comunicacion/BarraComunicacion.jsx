@@ -12,11 +12,15 @@ import { useRef, useState } from 'react'
 import { accionPorId } from '../../datos/accionesRapidas.js'
 import { claveDia } from '../../motor/fechas.js'
 import { usarEnvioInteraccion } from './usarEnvioInteraccion.js'
+import { usarApp } from '../../contexto/AppContexto.jsx'
+import { parejaVinculada } from '../../servicios/syncService.js'
 
 const RAPIDAS = ['corazon', 'besitos', 'abrazo', 'extrano']
 
 export default function BarraComunicacion({ alAbrirCentro, alAbrirMensaje, onReaccion }) {
   const enviarAccion = usarEnvioInteraccion()
+  const { perfil } = usarApp()
+  const vinculada = parejaVinculada(perfil)
   const enviandoRef = useRef(false)
   const timerRef = useRef(null)
   const longRef = useRef(false)
@@ -29,7 +33,11 @@ export default function BarraComunicacion({ alAbrirCentro, alAbrirMensaje, onRea
     enviandoRef.current = true
     const a = accionPorId(id)
     if (a) {
-      await enviarAccion(a, { claveAntiSpam: `reaccion:${claveDia(new Date())}` })
+      const resultado = await enviarAccion(a, { claveAntiSpam: `reaccion:${claveDia(new Date())}` })
+      if (!resultado?.ok) {
+        enviandoRef.current = false
+        return resultado
+      }
       onReaccion?.(a.expresion)
     }
     setFeedback(true)
@@ -75,7 +83,7 @@ export default function BarraComunicacion({ alAbrirCentro, alAbrirMensaje, onRea
           {feedback ? (
             <span className="font-semibold text-acento">💗 ¡Enviado!</span>
           ) : (
-            'Dile algo a tu amor…'
+            vinculada ? 'Dile algo a tu amor…' : 'Vincula a tu pareja para interactuar'
           )}
         </button>
 

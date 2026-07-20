@@ -17,7 +17,7 @@
 // las hormonas — la fase solo "puede influir" / "coincide con".
 // ============================================================
 
-import { diasEntre, sumarDias, aMedianoche } from './fechas.js'
+import { diasEntre, sumarDias, aMedianoche, esFechaISOValida } from './fechas.js'
 
 export const FASES = {
   menstrual: {
@@ -161,8 +161,13 @@ export function esDiaFertil(dia, config) {
  */
 export function recalcularPromedio(registrosRegla = []) {
   const fechas = registrosRegla
-    .map((r) => (r.fechaInicio ? new Date(r.fechaInicio) : null))
-    .filter(Boolean)
+    .map((r) => {
+      if (!r.fechaInicio) return null
+      if (typeof r.fechaInicio === 'string' && !esFechaISOValida(r.fechaInicio)) return null
+      const fecha = aMedianoche(r.fechaInicio)
+      return Number.isNaN(fecha.getTime()) ? null : fecha
+    })
+    .filter((fecha) => fecha !== null)
     .sort((a, b) => a - b)
 
   if (fechas.length < 2) {

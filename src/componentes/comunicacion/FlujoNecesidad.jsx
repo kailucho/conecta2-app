@@ -21,7 +21,8 @@ export default function FlujoNecesidad({ alConfirmar, alVolver, onReaccion }) {
   const ids = verMas ? [...FRECUENTES, ...ADICIONALES] : FRECUENTES
 
   async function enviar(accion) {
-    await enviarAccion(accion, { nota })
+    const resultado = await enviarAccion(accion, { nota })
+    if (!resultado?.ok) return
     onReaccion?.(accion.expresion)
     alConfirmar({
       icono: accion.emoji,

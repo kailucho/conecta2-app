@@ -24,6 +24,10 @@ describe('calcularDiaCiclo', () => {
     expect(calcularDiaCiclo(new Date('2026-07-15'), hoy)).toBe(1)
   })
 
+  it('el día siguiente de la regla es el día 2 usando strings ISO locales', () => {
+    expect(calcularDiaCiclo('2026-07-19', '2026-07-20')).toBe(2)
+  })
+
   it('cuenta correctamente varios días después', () => {
     expect(calcularDiaCiclo(new Date('2026-07-01'), new Date('2026-07-10'))).toBe(10)
   })
@@ -171,6 +175,16 @@ describe('recalcularPromedio', () => {
       { fechaInicio: '2026-05-29' },
     ]
     expect(recalcularPromedio(registros).cantidadCiclos).toBe(1)
+  })
+
+  it('calcula con strings ISO como fechas locales, incluso al cambiar de mes', () => {
+    const resultado = recalcularPromedio([
+      { fechaInicio: '2026-01-31' },
+      { fechaInicio: '2026-02-28' },
+      { fechaInicio: '2026-03-28' },
+    ])
+    expect(resultado.promedioReal).toBe(28)
+    expect(resultado.cantidadCiclos).toBe(2)
   })
 })
 

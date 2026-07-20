@@ -34,7 +34,7 @@ const NECESIDADES = [
 ]
 
 export default function FlujoEmocion({ alConfirmar, alVolver, onReaccion }) {
-  const { perfil, config, crearInteraccion } = usarApp()
+  const { config, enviarInteraccionPareja } = usarApp()
   const { otorgar } = usarPuntos()
   const [elegida, setElegida] = useState(null)
   const [verMas, setVerMas] = useState(false)
@@ -43,34 +43,34 @@ export default function FlujoEmocion({ alConfirmar, alVolver, onReaccion }) {
     const hoy = claveDia(new Date())
     const notaTexto = necesidad ? necesidad.label : null
     const base = {
-      coupleId: perfil.coupleId,
-      senderId: perfil.userId,
-      receiverId: perfil.partnerId,
       note: notaTexto,
       necesidad: necesidad?.id || null,
     }
 
     let mensajeConfirma
+    let resultado
     if (emocion.tipo === 'animo') {
-      await crearInteraccion({
+      resultado = await enviarInteraccionPareja({
         ...base,
         type: 'animo',
         actionId: emocion.actionId,
         category: 'gesture',
         valencia: 1,
-      })
+      }, { tipo: 'animo', actionId: emocion.actionId, note: notaTexto })
+      if (!resultado.ok) return
       await otorgar(5, `animo:${hoy}`)
       mensajeConfirma = 'Tu pareja verá cómo te sientes 💗'
     } else {
       const def = alertaPorId(emocion.actionId)
-      await crearInteraccion({
+      resultado = await enviarInteraccionPareja({
         ...base,
         type: 'alerta_estado',
         actionId: emocion.actionId,
         category: 'feeling',
         valencia: 0,
         expiresAt: finDelDia(),
-      })
+      }, { tipo: 'alerta_estado', actionId: emocion.actionId, note: notaTexto })
+      if (!resultado.ok) return
       await otorgar(5, `estado:${hoy}`)
       mensajeConfirma = def?.mensaje || 'Tu pareja sabrá cómo tratarte hoy 💛'
     }

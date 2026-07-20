@@ -28,6 +28,7 @@ function sembrar(interacciones) {
       userId: 'u-me',
       coupleId: 'c',
       partnerId: 'u-other',
+      estadoVinculacion: 'vinculada',
       rol: 'ella',
       tipoRelacion: 'casados',
       nombre: 'Yo',

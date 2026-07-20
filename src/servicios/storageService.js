@@ -80,17 +80,71 @@ export async function limpiarTodo() {
  * pareja, la encola en la cola de salida (Fase 2).
  */
 export async function agregarInteraccion(interaccion) {
-  const lista = await obtener(CLAVES.interacciones, [])
-  lista.unshift(interaccion)
-  await guardar(CLAVES.interacciones, lista)
+  const anterior = await obtener(CLAVES.interacciones, [])
+  const lista = [interaccion, ...anterior]
+  const guardoInteracciones = await guardar(CLAVES.interacciones, lista)
+  if (!guardoInteracciones) return null
 
   // Si va dirigida a la pareja, se encola para sincronizar luego.
   if (interaccion.receiverId && interaccion.status === 'pendiente_sync') {
     const cola = await obtener(CLAVES.colaSalida, [])
-    cola.push(interaccion.id)
-    await guardar(CLAVES.colaSalida, cola)
+    const guardoCola = await guardar(CLAVES.colaSalida, [...cola, interaccion.id])
+    if (!guardoCola) {
+      // Evita informar éxito si la operación quedó a medias.
+      await guardar(CLAVES.interacciones, anterior)
+      return null
+    }
   }
   return interaccion
+}
+
+/**
+ * Migra perfiles de la primera versión, cuyos coupleId/partnerId eran UUID
+ * locales sin una vinculación real. Es idempotente: el estado explícito evita
+ * repetirla y el perfil se guarda al final para poder reintentar si algo falla.
+ */
+export async function migrarVinculacionLegada() {
+  const perfil = await obtener(CLAVES.perfil, null)
+  const esLegado = Boolean(
+    perfil?.coupleId &&
+    perfil?.partnerId &&
+    !Object.prototype.hasOwnProperty.call(perfil, 'estadoVinculacion'),
+  )
+  if (!esLegado) return { migrado: false, perfil }
+
+  const interacciones = await obtener(CLAVES.interacciones, [])
+  const idsLegados = new Set()
+  const migradas = interacciones.map((interaccion) => {
+    if (interaccion.receiverId !== perfil.partnerId) return interaccion
+    idsLegados.add(interaccion.id)
+    return {
+      ...interaccion,
+      coupleId: null,
+      receiverId: null,
+      status: 'no_enviado_legacy',
+    }
+  })
+
+  if (idsLegados.size > 0 && !(await guardar(CLAVES.interacciones, migradas))) {
+    return { migrado: false, perfil, error: 'error_persistencia' }
+  }
+
+  // En un perfil legado toda la cola apuntaba a una pareja ficticia.
+  if (!(await guardar(CLAVES.colaSalida, []))) {
+    return { migrado: false, perfil, error: 'error_persistencia' }
+  }
+
+  const perfilMigrado = {
+    ...perfil,
+    coupleId: null,
+    partnerId: null,
+    estadoVinculacion: 'no_vinculada',
+  }
+  if (!(await guardar(CLAVES.perfil, perfilMigrado))) {
+    return { migrado: false, perfil, error: 'error_persistencia' }
+  }
+
+  return { migrado: true, perfil: perfilMigrado, interacciones: migradas }
 }
 
 /**

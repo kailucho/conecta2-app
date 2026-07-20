@@ -13,30 +13,32 @@ import { frasesSugeridas } from '../../datos/paraHoy.js'
 import { notificar, vibrar } from '../../servicios/notificaciones.js'
 
 export default function MensajeLibre({ abierto, alCerrar, onReaccion }) {
-  const { perfil, config, crearInteraccion } = usarApp()
+  const { config, enviarInteraccionPareja } = usarApp()
   const { otorgar } = usarPuntos()
   const [texto, setTexto] = useState('')
   const [enviado, setEnviado] = useState(false)
 
   function cerrar() {
-    setTexto('')
     setEnviado(false)
     alCerrar()
+  }
+
+  function cerrarDespuesEnvio() {
+    setTexto('')
+    cerrar()
   }
 
   async function enviar(contenido) {
     const cuerpo = (contenido ?? texto).trim()
     if (!cuerpo) return
-    await crearInteraccion({
-      coupleId: perfil.coupleId,
-      senderId: perfil.userId,
-      receiverId: perfil.partnerId,
+    const resultado = await enviarInteraccionPareja({
       type: 'mensaje',
       actionId: null,
       category: 'gesture',
       note: cuerpo,
       valencia: 1,
-    })
+    }, { tipo: 'mensaje', note: cuerpo })
+    if (!resultado.ok) return
     await otorgar(5, `mensaje:${claveDia(new Date())}`)
     notificar('Tu pareja te escribió un mensajito 💬', {
       body: cuerpo,
@@ -54,7 +56,7 @@ export default function MensajeLibre({ abierto, alCerrar, onReaccion }) {
           <div className="text-5xl">💌</div>
           <p className="font-titulo font-bold text-texto">¡Mensaje enviado!</p>
           <button
-            onClick={cerrar}
+            onClick={cerrarDespuesEnvio}
             className="w-full rounded-pill bg-acento py-2.5 font-bold text-white"
           >
             Listo

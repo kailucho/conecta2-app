@@ -11,11 +11,13 @@ import { useEffect, useState } from 'react'
 import { usarApp } from '../contexto/AppContexto.jsx'
 import { generarId } from '../servicios/storageService.js'
 import { recalcularPromedio } from '../motor/motorCiclo.js'
-import { claveDia } from '../motor/fechas.js'
+import { claveDia, esFechaISOValida } from '../motor/fechas.js'
 import { comoLlamarPareja } from '../datos/lenguaje.js'
 import { puedeInstalar, instalar, estaInstalada } from '../servicios/instalacionPWA.js'
 import { pedirPermiso } from '../servicios/notificaciones.js'
 import BotonGrande from '../componentes/comunes/BotonGrande.jsx'
+import FechaDiaMesAnio from '../componentes/comunes/FechaDiaMesAnio.jsx'
+import { ESTADOS_VINCULACION } from '../servicios/syncService.js'
 
 const TIPOS_RELACION = [
   { id: 'casados', emoji: '💍', label: 'Casados', desc: 'Experiencia completa' },
@@ -41,6 +43,8 @@ export default function Onboarding() {
   const [rol, setRol] = useState(null)
   const [tipoRelacion, setTipoRelacion] = useState(null)
   const [fechaRegla, setFechaRegla] = useState('')
+  const [estadoFecha, setEstadoFecha] = useState('vacia')
+  const [errorFecha, setErrorFecha] = useState('')
   const [tono, setTono] = useState('normal')
   const [privacidad, setPrivacidad] = useState('todo')
 
@@ -56,8 +60,9 @@ export default function Onboarding() {
     const userId = generarId()
     const perfil = {
       userId,
-      coupleId: generarId(), // se reconciliará al vincular en Fase 2
-      partnerId: generarId(), // placeholder de la pareja
+      coupleId: null,
+      partnerId: null,
+      estadoVinculacion: ESTADOS_VINCULACION.NO_VINCULADA,
       rol,
       tipoRelacion,
       nombre: '',
@@ -84,6 +89,32 @@ export default function Onboarding() {
   }
 
   const total = rol === 'ella' ? 6 : 5
+
+  function cambiarFecha(valor, detalle) {
+    setFechaRegla(valor)
+    setEstadoFecha(detalle?.estado || (valor ? 'valida' : 'vacia'))
+    setErrorFecha('')
+  }
+
+  function continuarFecha() {
+    if (!fechaRegla) {
+      setErrorFecha(
+        estadoFecha === 'invalida'
+          ? 'Ingresa una fecha válida.'
+          : 'Completa el día, mes y año.',
+      )
+      return
+    }
+    if (!esFechaISOValida(fechaRegla)) {
+      setErrorFecha('Ingresa una fecha válida.')
+      return
+    }
+    if (fechaRegla > hoyStr) {
+      setErrorFecha('El primer día de la última menstruación no puede estar en el futuro.')
+      return
+    }
+    setPaso(4)
+  }
 
   return (
     <div className="fondo-app flex min-h-screen flex-col px-6 pb-10 pt-12 area-segura-arriba">
@@ -209,30 +240,36 @@ export default function Onboarding() {
           <div className="animate-aparecer">
             <h2 className="mb-2 font-titulo text-2xl font-bold text-texto">
               {rol === 'ella'
-                ? '¿Cuándo empezó tu última regla?'
-                : `¿Cuándo fue la última regla de ${comoLlamarPareja(rol, tipoRelacion)}?`}
+                ? '¿Cuál fue el primer día de tu última menstruación?'
+                : `¿Cuál fue el primer día de la última menstruación de ${comoLlamarPareja(rol, tipoRelacion)}?`}
             </h2>
-            <p className="mb-8 text-texto-2">
-              Con esto calculamos las fases del ciclo. Si no lo sabes con
-              exactitud, un aproximado está bien; se ajusta con el tiempo.
+            <p className="mb-2 text-texto-2">
+              Elige el día en que comenzó el sangrado, no el día en que terminó.
             </p>
-            <input
-              type="date"
+            <p className="mb-6 text-sm text-texto-3">
+              Si no recuerdas la fecha exacta, puedes ingresar una aproximada o
+              registrarla después.
+            </p>
+            <FechaDiaMesAnio
               value={fechaRegla}
               max={hoyStr}
-              onChange={(e) => setFechaRegla(e.target.value)}
-              className="w-full rounded-card border border-borde bg-tarjeta p-4 text-lg text-texto"
+              onChange={cambiarFecha}
+              error={errorFecha}
             />
             <button
-              onClick={() => setPaso(4)}
+              onClick={() => {
+                setFechaRegla('')
+                setEstadoFecha('vacia')
+                setErrorFecha('')
+                setPaso(4)
+              }}
               className="mt-4 text-sm text-texto-3 underline"
             >
               No lo sé ahora, lo pongo después
             </button>
             <BotonGrande
               className="mt-6 w-full"
-              disabled={!fechaRegla}
-              onClick={() => setPaso(4)}
+              onClick={continuarFecha}
             >
               Continuar
             </BotonGrande>

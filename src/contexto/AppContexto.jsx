@@ -21,7 +21,9 @@ import {
   actualizarInteraccion,
   limpiarTodo,
   generarId,
+  migrarVinculacionLegada,
 } from '@/servicios/storageService.js'
+import { parejaVinculada } from '@/servicios/syncService.js'
 
 const AppContexto = createContext(null)
 
@@ -76,6 +78,8 @@ const ESTADO_INICIAL = {
   interacciones: [],
   animoObservado: [],
   sos: { usos: [] },
+  solicitudVinculacion: null,
+  errorInteraccion: null,
 }
 
 // ---------- Reducer ----------
@@ -102,6 +106,12 @@ function reducer(estado, accion) {
       return { ...estado, animoObservado: accion.lista }
     case 'SET_SOS':
       return { ...estado, sos: { ...estado.sos, ...accion.cambios } }
+    case 'SOLICITAR_VINCULACION':
+      return { ...estado, solicitudVinculacion: accion.intencion || { tipo: 'interaccion' } }
+    case 'CERRAR_SOLICITUD_VINCULACION':
+      return { ...estado, solicitudVinculacion: null }
+    case 'SET_ERROR_INTERACCION':
+      return { ...estado, errorInteraccion: accion.motivo }
     default:
       return estado
   }
@@ -114,6 +124,7 @@ export function ProveedorApp({ children }) {
   // Hidratación inicial desde localStorage.
   useEffect(() => {
     ;(async () => {
+      await migrarVinculacionLegada()
       const [
         perfil,
         config,
@@ -204,18 +215,76 @@ export function ProveedorApp({ children }) {
     [estado.sos],
   )
 
-  // Crea y guarda una interacción, refrescando el estado en memoria.
-  const crearInteraccion = useCallback(async (parcial) => {
+  // Registros locales y envíos a pareja son operaciones distintas.
+  const crearInteraccionLocal = useCallback(async (parcial) => {
     const interaccion = {
       id: generarId(),
       createdAt: new Date().toISOString(),
-      status: 'pendiente_sync',
+      status: 'local',
       ...parcial,
+      receiverId: null,
     }
-    await agregarInteraccion(interaccion)
+    const guardada = await agregarInteraccion(interaccion)
+    if (!guardada) {
+      dispatch({ tipo: 'SET_ERROR_INTERACCION', motivo: 'error_persistencia' })
+      return { ok: false, motivo: 'error_persistencia' }
+    }
     const lista = await obtener(CLAVES.interacciones, [])
     dispatch({ tipo: 'SET_INTERACCIONES', lista })
-    return interaccion
+    return { ok: true, interaccion }
+  }, [])
+
+  const enviarInteraccionPareja = useCallback(async (parcial, intencion = null) => {
+    if (!parejaVinculada(estado.perfil)) {
+      dispatch({
+        tipo: 'SOLICITAR_VINCULACION',
+        intencion: intencion || {
+          tipo: parcial.type || 'interaccion',
+          actionId: parcial.actionId || null,
+          note: parcial.note || null,
+        },
+      })
+      return { ok: false, motivo: 'sin_pareja_vinculada' }
+    }
+
+    const interaccion = {
+      ...parcial,
+      id: generarId(),
+      createdAt: new Date().toISOString(),
+      status: 'pendiente_sync',
+      coupleId: estado.perfil.coupleId,
+      senderId: estado.perfil.userId,
+      receiverId: estado.perfil.partnerId,
+    }
+    const guardada = await agregarInteraccion(interaccion)
+    if (!guardada) {
+      dispatch({ tipo: 'SET_ERROR_INTERACCION', motivo: 'error_persistencia' })
+      return { ok: false, motivo: 'error_persistencia' }
+    }
+    const lista = await obtener(CLAVES.interacciones, [])
+    dispatch({ tipo: 'SET_INTERACCIONES', lista })
+    return { ok: true, interaccion }
+  }, [estado.perfil])
+
+  // Compatibilidad defensiva para cualquier consumidor que aún use la API
+  // anterior: un receiverId siempre activa el mismo guard central.
+  const crearInteraccion = useCallback(
+    (parcial) => parcial?.receiverId
+      ? enviarInteraccionPareja(parcial)
+      : crearInteraccionLocal(parcial),
+    [crearInteraccionLocal, enviarInteraccionPareja],
+  )
+
+  const solicitarVinculacion = useCallback((intencion = null) => {
+    dispatch({ tipo: 'SOLICITAR_VINCULACION', intencion })
+  }, [])
+
+  const cerrarSolicitudVinculacion = useCallback(() => {
+    dispatch({ tipo: 'CERRAR_SOLICITUD_VINCULACION' })
+  }, [])
+
+  const limpiarErrorInteraccion = useCallback(() => {
+    dispatch({ tipo: 'SET_ERROR_INTERACCION', motivo: null })
   }, [])
 
   const editarInteraccion = useCallback(async (id, cambios) => {
@@ -246,9 +315,14 @@ export function ProveedorApp({ children }) {
     actualizarGamificacion,
     actualizarNosotros,
     registrarSOS,
+    crearInteraccionLocal,
+    enviarInteraccionPareja,
     crearInteraccion,
     editarInteraccion,
     registrarAnimoObservado,
+    solicitarVinculacion,
+    cerrarSolicitudVinculacion,
+    limpiarErrorInteraccion,
     reiniciarApp,
   }
 

@@ -16,10 +16,20 @@ import Nosotros from './pantallas/Nosotros.jsx'
 import Ajustes from './pantallas/Ajustes.jsx'
 import FlujoSOS from './componentes/sos/FlujoSOS.jsx'
 import BloqueoPIN from './componentes/comunes/BloqueoPIN.jsx'
+import ParejaRequerida from './componentes/vinculacion/ParejaRequerida.jsx'
 
 export default function App() {
-  const { cargando, perfil, config } = usarApp()
+  const {
+    cargando,
+    perfil,
+    config,
+    solicitudVinculacion,
+    errorInteraccion,
+    cerrarSolicitudVinculacion,
+    limpiarErrorInteraccion,
+  } = usarApp()
   const [pestana, setPestana] = useState('hoy')
+  const [seccionAjustes, setSeccionAjustes] = useState(null)
   const [sosAbierto, setSosAbierto] = useState(false)
   // Bloqueo por PIN: arranca bloqueado si hay PIN configurado.
   const [desbloqueado, setDesbloqueado] = useState(false)
@@ -69,7 +79,13 @@ export default function App() {
     mes: <Mes />,
     guia: <Guia alVolver={() => setPestana('ajustes')} />,
     nosotros: <Nosotros />,
-    ajustes: <Ajustes irAGuia={() => setPestana('guia')} />,
+    ajustes: (
+      <Ajustes
+        irAGuia={() => setPestana('guia')}
+        seccionObjetivo={seccionAjustes}
+        alConsumirObjetivo={() => setSeccionAjustes(null)}
+      />
+    ),
   }
 
   // La Guía se muestra desde "Más": resalta esa pestaña mientras se navega.
@@ -84,6 +100,21 @@ export default function App() {
       <NavegacionInferior activa={pestanaActiva} alCambiar={setPestana} />
 
       {sosAbierto && <FlujoSOS alCerrar={() => setSosAbierto(false)} />}
+
+      <ParejaRequerida
+        abierto={!!solicitudVinculacion || !!errorInteraccion}
+        motivo={errorInteraccion || 'sin_pareja_vinculada'}
+        alCerrar={() => {
+          cerrarSolicitudVinculacion()
+          limpiarErrorInteraccion()
+        }}
+        alIrAVinculacion={() => {
+          cerrarSolicitudVinculacion()
+          setSosAbierto(false)
+          setPestana('ajustes')
+          setSeccionAjustes('pareja')
+        }}
+      />
     </div>
   )
 }

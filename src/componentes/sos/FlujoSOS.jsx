@@ -18,9 +18,10 @@ import {
   escenarioPorId,
   BANNER_TERAPIA,
 } from '../../datos/protocolosSOS.js'
+import { parejaVinculada } from '../../servicios/syncService.js'
 
 export default function FlujoSOS({ alCerrar }) {
-  const { perfil, config, sos, registrarSOS, crearInteraccion } = usarApp()
+  const { perfil, config, sos, registrarSOS, enviarInteraccionPareja } = usarApp()
   const [escenarioId, setEscenarioId] = useState(null)
 
   // ¿4+ usos de SOS en los últimos 14 días?
@@ -35,16 +36,15 @@ export default function FlujoSOS({ alCerrar }) {
   async function elegir(id) {
     setEscenarioId(id)
     await registrarSOS(id)
-    // Registra el conflicto como interacción negativa (nubla el cielo).
-    await crearInteraccion({
-      coupleId: perfil.coupleId,
-      senderId: perfil.userId,
-      receiverId: perfil.partnerId,
-      type: 'sos',
-      actionId: id,
-      category: 'sos',
-      valencia: -1,
-    })
+    // El uso local ya quedó registrado; el aviso remoto es opcional y guardado.
+    if (parejaVinculada(perfil)) {
+      await enviarInteraccionPareja({
+        type: 'sos',
+        actionId: id,
+        category: 'sos',
+        valencia: -1,
+      }, { tipo: 'sos', actionId: id })
+    }
   }
 
   const escenario = escenarioId ? escenarioPorId(escenarioId) : null

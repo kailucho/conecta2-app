@@ -35,6 +35,7 @@ function sembrarPerfil(rol) {
       userId,
       coupleId: 'c-test',
       partnerId: 'p-test',
+      estadoVinculacion: 'vinculada',
       rol,
       tipoRelacion: 'casados',
       nombre: 'Test',
@@ -104,4 +105,24 @@ describe('Prueba de humo de la app', () => {
       await waitFor(() => expect(screen.getByText(/Las 4 fases del ciclo/)).toBeTruthy())
     })
   }
+
+  it('sin pareja explica el bloqueo y lleva a la sección de vinculación', async () => {
+    sembrarPerfil('ella')
+    const perfil = JSON.parse(localStorage.getItem('mp:perfil'))
+    localStorage.setItem('mp:perfil', JSON.stringify({
+      ...perfil,
+      coupleId: null,
+      partnerId: null,
+      estadoVinculacion: 'no_vinculada',
+    }))
+    await montar()
+
+    fireEvent.click(screen.getByText('Vincula a tu pareja para interactuar'))
+    await screen.findByText('Vincula a tu pareja para enviarle esto')
+    fireEvent.click(screen.getByText('Ir a vinculación'))
+
+    await screen.findByText('Pareja aún no vinculada')
+    expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('titulo-vinculacion')
+    expect(JSON.parse(localStorage.getItem('mp:interacciones') || '[]')).toEqual([])
+  })
 })

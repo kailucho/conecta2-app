@@ -7,12 +7,28 @@
 // envío real sin cambiar los consumidores.
 // ============================================================
 
-import { obtener, guardar, CLAVES } from './storageService.js'
+import { obtener, CLAVES } from './storageService.js'
+
+export const ESTADOS_VINCULACION = {
+  NO_VINCULADA: 'no_vinculada',
+  PENDIENTE: 'pendiente',
+  VINCULADA: 'vinculada',
+}
 
 /**
  * ¿Está la pareja vinculada? En Fase 1 siempre false.
  */
-export function parejaVinculada() {
+export function parejaVinculada(perfil) {
+  return Boolean(
+    perfil?.estadoVinculacion === ESTADOS_VINCULACION.VINCULADA &&
+    perfil?.coupleId &&
+    perfil?.partnerId &&
+    perfil.partnerId !== perfil.userId
+  )
+}
+
+/** La versión local todavía no cuenta con un servicio real entre dispositivos. */
+export function vinculacionDisponible() {
   return false
 }
 
@@ -28,9 +44,12 @@ export async function pendientesDeSync() {
  * Intenta drenar la cola de salida. En Fase 1 es un no-op que simplemente
  * reporta que no hay conexión de pareja todavía.
  */
-export async function drenarCola() {
-  if (!parejaVinculada()) {
+export async function drenarCola(perfil) {
+  if (!parejaVinculada(perfil)) {
     return { enviados: 0, motivo: 'sin_pareja_vinculada' }
+  }
+  if (!vinculacionDisponible()) {
+    return { enviados: 0, motivo: 'vinculacion_no_disponible' }
   }
   // Fase 2: aquí iría el POST al backend y el vaciado de la cola.
   return { enviados: 0 }

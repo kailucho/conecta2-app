@@ -16,7 +16,8 @@ export default function FlujoJuntos({ alConfirmar, alVolver, onReaccion, irA, al
   async function proponer(id) {
     const a = accionPorId(id)
     if (!a) return
-    await enviarAccion(a)
+    const resultado = await enviarAccion(a)
+    if (!resultado?.ok) return
     onReaccion?.(a.expresion)
     alConfirmar({
       icono: a.emoji,

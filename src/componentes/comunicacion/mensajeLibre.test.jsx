@@ -28,6 +28,7 @@ function sembrar() {
       userId: 'u-me',
       coupleId: 'c',
       partnerId: 'u-other',
+      estadoVinculacion: 'vinculada',
       rol: 'ella',
       tipoRelacion: 'casados',
       nombre: 'Yo',
@@ -37,10 +38,29 @@ function sembrar() {
   )
 }
 
+function sembrarSinPareja() {
+  localStorage.setItem(
+    'mp:perfil',
+    JSON.stringify({
+      userId: 'u-me',
+      coupleId: null,
+      partnerId: null,
+      estadoVinculacion: 'no_vinculada',
+      rol: 'ella',
+      tipoRelacion: 'casados',
+    }),
+  )
+}
+
 function Harness() {
-  const { cargando } = usarApp()
+  const { cargando, solicitudVinculacion } = usarApp()
   if (cargando) return null
-  return <MensajeLibre abierto alCerrar={() => {}} onReaccion={() => {}} />
+  return (
+    <>
+      <MensajeLibre abierto alCerrar={() => {}} onReaccion={() => {}} />
+      {solicitudVinculacion && <output>requiere-vinculacion</output>}
+    </>
+  )
 }
 
 async function montar() {
@@ -95,5 +115,18 @@ describe('MensajeLibre', () => {
     fireEvent.click(screen.getByText('Enviar 💌'))
     await waitFor(() => expect(interacciones().length).toBe(1))
     expect(interacciones()[0].type).toBe('mensaje')
+  })
+
+  it('sin pareja conserva el texto y no simula que fue enviado', async () => {
+    sembrarSinPareja()
+    await montar()
+    const textarea = screen.getByPlaceholderText(/Escríbele algo bonito/)
+    fireEvent.change(textarea, { target: { value: 'Te extraño' } })
+    fireEvent.click(screen.getByText('Enviar 💌'))
+
+    await screen.findByText('requiere-vinculacion')
+    expect(interacciones()).toEqual([])
+    expect(textarea.value).toBe('Te extraño')
+    expect(screen.queryByText('¡Mensaje enviado!')).toBeNull()
   })
 })

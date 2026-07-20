@@ -28,7 +28,7 @@ const TONOS = [
   { id: 'sinfiltro', label: 'Sin filtro 🔥' },
 ]
 
-export default function Ajustes({ irAGuia }) {
+export default function Ajustes({ irAGuia, seccionObjetivo, alConsumirObjetivo }) {
   const {
     perfil,
     config,
@@ -232,7 +232,10 @@ export default function Ajustes({ irAGuia }) {
       </section>
 
       {/* ---------- Pareja ---------- */}
-      <InvitarPareja />
+      <InvitarPareja
+        enfocar={seccionObjetivo === 'pareja'}
+        alEnfocar={alConsumirObjetivo}
+      />
 
       {/* ---------- Reiniciar ---------- */}
       <section className="space-y-2">

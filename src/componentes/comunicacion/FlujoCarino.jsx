@@ -15,7 +15,7 @@ import { usarEnvioInteraccion } from './usarEnvioInteraccion.js'
 const GESTOS = ['extrano', 'besitos', 'corazon', 'ganas_verte', 'buena_noticia']
 
 export default function FlujoCarino({ alConfirmar, alVolver, onReaccion, alAbrirMensaje }) {
-  const { perfil, config, crearInteraccion } = usarApp()
+  const { perfil, enviarInteraccionPareja } = usarApp()
   const { otorgar } = usarPuntos()
   const enviarAccion = usarEnvioInteraccion()
   const [modoAprecio, setModoAprecio] = useState(false)
@@ -24,7 +24,8 @@ export default function FlujoCarino({ alConfirmar, alVolver, onReaccion, alAbrir
   async function enviarGesto(id) {
     const a = accionPorId(id)
     if (!a) return
-    await enviarAccion(a)
+    const resultado = await enviarAccion(a)
+    if (!resultado?.ok) return
     onReaccion?.(a.expresion)
     alConfirmar({
       icono: a.emoji,
@@ -36,15 +37,13 @@ export default function FlujoCarino({ alConfirmar, alVolver, onReaccion, alAbrir
 
   async function enviarAprecio() {
     if (!texto.trim()) return
-    await crearInteraccion({
-      coupleId: perfil.coupleId,
-      senderId: perfil.userId,
-      receiverId: perfil.partnerId,
+    const resultado = await enviarInteraccionPareja({
       type: 'aprecio',
       category: 'gesture',
       note: texto.trim(),
       valencia: 1,
-    })
+    }, { tipo: 'aprecio', note: texto.trim() })
+    if (!resultado.ok) return
     await otorgar(15, `aprecio:${claveDia(new Date())}`)
     onReaccion?.('amor')
     alConfirmar({

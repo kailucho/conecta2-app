@@ -1,43 +1,62 @@
-// Invitar pareja — muestra el código de pareja como "próximamente" (Fase 2).
+import { useEffect, useRef } from 'react'
 import TarjetaBase from '../comunes/TarjetaBase.jsx'
 import { usarApp } from '../../contexto/AppContexto.jsx'
-import { generarCodigoInvitacion, pendientesDeSync } from '../../servicios/syncService.js'
-import { useEffect, useState } from 'react'
+import {
+  ESTADOS_VINCULACION,
+  parejaVinculada,
+  vinculacionDisponible,
+} from '../../servicios/syncService.js'
 
-export default function InvitarPareja() {
+export default function InvitarPareja({ enfocar = false, alEnfocar }) {
   const { perfil } = usarApp()
-  const codigo = generarCodigoInvitacion(perfil.coupleId)
-  const [pendientes, setPendientes] = useState(0)
+  const seccionRef = useRef(null)
+  const vinculada = parejaVinculada(perfil)
+  const pendiente = perfil.estadoVinculacion === ESTADOS_VINCULACION.PENDIENTE
 
   useEffect(() => {
-    pendientesDeSync().then(setPendientes)
-  }, [])
+    if (!enfocar) return
+    seccionRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
+    seccionRef.current?.focus()
+    alEnfocar?.()
+  }, [enfocar, alEnfocar])
 
   return (
-    <TarjetaBase>
-      <div className="mb-1 flex items-center justify-between">
-        <p className="font-titulo font-bold text-texto">👫 Invitar a tu pareja</p>
-        <span className="rounded-pill bg-alerta/20 px-2 py-0.5 text-xs font-bold text-alerta">
-          Próximamente
-        </span>
-      </div>
-      <p className="text-sm text-texto-2">
-        Pronto vas a poder vincular tu cuenta con la de tu pareja para que se
-        envíen todo en tiempo real, cada uno desde su celular.
-      </p>
-      <div className="mt-3 rounded-xl bg-tarjeta-hover p-3 text-center">
-        <p className="text-xs text-texto-3">Tu código de pareja</p>
-        <p className="font-titulo text-2xl font-extrabold tracking-widest text-acento">
-          {codigo}
+    <section ref={seccionRef} tabIndex={-1} aria-labelledby="titulo-vinculacion" className="outline-none">
+      <TarjetaBase className={enfocar ? 'ring-2 ring-acento ring-offset-2 ring-offset-fondo' : ''}>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p id="titulo-vinculacion" className="font-titulo font-bold text-texto">
+            👩‍❤️‍👨 Vinculación de pareja
+          </p>
+          <span className="rounded-pill bg-alerta/20 px-2 py-0.5 text-xs font-bold text-alerta">
+            {vinculada ? 'Vinculada' : pendiente ? 'Pendiente' : 'Próximamente'}
+          </span>
+        </div>
+
+        <p className="font-semibold text-texto">
+          {vinculada
+            ? 'Pareja vinculada'
+            : pendiente
+              ? 'Vinculación pendiente'
+              : 'Pareja aún no vinculada'}
         </p>
-      </div>
-      {pendientes > 0 && (
-        <p className="mt-2 text-xs text-texto-3">
-          Tienes {pendientes} {pendientes === 1 ? 'mensaje' : 'mensajes'} guardado
-          {pendientes === 1 ? '' : 's'} que se enviará
-          {pendientes === 1 ? '' : 'n'} cuando se vinculen 📤
+        <p className="mt-1 text-sm text-texto-2">
+          La vinculación permitirá que cada uno use la app desde su celular y reciba
+          las interacciones del otro.
         </p>
-      )}
-    </TarjetaBase>
+
+        {!vinculada && !vinculacionDisponible() && (
+          <div className="mt-3 rounded-xl bg-tarjeta-hover p-3">
+            <p className="text-sm text-texto">
+              La conexión entre dos celulares todavía no está disponible en esta
+              versión local.
+            </p>
+            <p className="mt-1 text-xs text-texto-3">
+              La app ya está preparada para activarla cuando se configure el servicio
+              de sincronización.
+            </p>
+          </div>
+        )}
+      </TarjetaBase>
+    </section>
   )
 }

@@ -5,14 +5,16 @@ import { useEffect, useState } from 'react'
 import { usarApp } from '../../contexto/AppContexto.jsx'
 import { notificar } from '../../servicios/notificaciones.js'
 import { MENSAJE_PAUSA, INICIO_SUAVE_SUGERENCIA } from '../../datos/protocolosSOS.js'
+import { parejaVinculada } from '../../servicios/syncService.js'
 
 const DURACION = 20 * 60 // segundos
 
 export default function TimerEnfriamiento() {
-  const { perfil, config, crearInteraccion } = usarApp()
+  const { perfil, config, enviarInteraccionPareja } = usarApp()
   const [activo, setActivo] = useState(false)
   const [restante, setRestante] = useState(DURACION)
   const [terminado, setTerminado] = useState(false)
+  const [avisoLocal, setAvisoLocal] = useState(false)
 
   useEffect(() => {
     if (!activo) return
@@ -32,17 +34,17 @@ export default function TimerEnfriamiento() {
     setActivo(true)
     setRestante(DURACION)
     setTerminado(false)
-    // Envía la pausa sin abandono a la pareja.
-    await crearInteraccion({
-      coupleId: perfil.coupleId,
-      senderId: perfil.userId,
-      receiverId: perfil.partnerId,
+    // El temporizador empieza siempre; el aviso solo existe con pareja vinculada.
+    setAvisoLocal(!parejaVinculada(perfil))
+    if (!parejaVinculada(perfil)) return
+    const resultado = await enviarInteraccionPareja({
       type: 'quick_action',
       actionId: 'pausa_consciente',
       category: 'feeling',
       note: MENSAJE_PAUSA,
       valencia: 0,
-    })
+    }, { tipo: 'quick_action', actionId: 'pausa_consciente', note: MENSAJE_PAUSA })
+    if (!resultado.ok) return
     notificar('Pausa consciente 💙', {
       body: MENSAJE_PAUSA,
       ocultarSensible: !config.notifSensibles,
@@ -69,6 +71,12 @@ export default function TimerEnfriamiento() {
           {min}:{seg}
         </p>
         <p className="text-xs text-texto-3">{MENSAJE_PAUSA}</p>
+        {avisoLocal && (
+          <p className="mt-2 text-xs font-semibold text-alerta">
+            La pausa comenzó en este dispositivo. Vincula a tu pareja para poder
+            avisarle desde la app.
+          </p>
+        )}
         <button
           onClick={() => {
             setActivo(false)
