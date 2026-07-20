@@ -10,12 +10,13 @@ export default function EncabezadoHoy({ fase, dia, mostrarFase = true, saludo })
     <header className="mb-4 flex items-start justify-between gap-3">
       <div>
         <p className="text-sm capitalize text-texto-3">{fechaLarga(new Date())}</p>
-        <h1 className="font-titulo text-2xl font-extrabold text-texto">
+        <h1 className="font-titulo text-[1.7rem] font-extrabold leading-tight text-texto">
           {saludo}
         </h1>
         {mostrarFase && fase && (
-          <p className="mt-0.5 text-sm text-texto-2">
-            Día {dia} · {fase.emoji} Fase {fase.nombre}
+          <p className="mt-1 text-sm text-texto-2">
+            Día {dia} · {fase.emoji}{' '}
+            <span className="font-bold text-acento">Fase {fase.nombre}</span>
             {fase.retraso && ' (con retraso)'}
           </p>
         )}

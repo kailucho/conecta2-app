@@ -69,7 +69,7 @@ export default function TarjetaParaHoy({ semilla, faseId, hayDatos, onReaccion }
           onClick={completarMision}
           disabled={misionHecha}
           className={`w-full rounded-pill py-2.5 font-titulo text-sm font-bold transition-transform active:scale-[0.98] ${
-            misionHecha ? 'bg-exito/20 text-exito' : 'bg-acento text-white'
+            misionHecha ? 'bg-exito/20 text-exito' : 'btn-acento text-white'
           }`}
         >
           {misionHecha ? '✓ ¡Misión cumplida!' : 'Marcar como hecha'}
@@ -81,7 +81,7 @@ export default function TarjetaParaHoy({ semilla, faseId, hayDatos, onReaccion }
           onClick={enviarSugerencia}
           disabled={enviado}
           className={`w-full rounded-pill py-2.5 font-titulo text-sm font-bold transition-transform active:scale-[0.98] ${
-            enviado ? 'bg-exito/20 text-exito' : 'bg-acento text-white'
+            enviado ? 'bg-exito/20 text-exito' : 'btn-acento text-white'
           }`}
         >
           {enviado
@@ -112,7 +112,7 @@ export default function TarjetaParaHoy({ semilla, faseId, hayDatos, onReaccion }
                 onClick={completarMision}
                 disabled={misionHecha}
                 className={`w-full rounded-pill py-2 text-xs font-bold transition-transform active:scale-[0.98] ${
-                  misionHecha ? 'bg-exito/20 text-exito' : 'bg-acento text-white'
+                  misionHecha ? 'bg-exito/20 text-exito' : 'btn-acento text-white'
                 }`}
               >
                 {misionHecha ? '✓ ¡Misión cumplida!' : 'Marcar como hecha'}

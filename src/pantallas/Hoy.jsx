@@ -19,6 +19,7 @@ import EstadoActivoChip from '../componentes/hoy/EstadoActivoChip.jsx'
 import BotonSOS from '../componentes/comunes/BotonSOS.jsx'
 import TarjetaBase from '../componentes/comunes/TarjetaBase.jsx'
 import Personaje from '../componentes/personajes/Personaje.jsx'
+import FondoDecorativo from '../componentes/comunes/FondoDecorativo.jsx'
 import { EXPRESIONES, expresionPorFase } from '../motor/expresiones.js'
 import BandejaPareja from '../componentes/transversales/BandejaPareja.jsx'
 import BarraComunicacion from '../componentes/comunicacion/BarraComunicacion.jsx'
@@ -83,6 +84,8 @@ export default function Hoy({ abrirSOS, irA }) {
 
   return (
     <div className="animate-aparecer">
+      <FondoDecorativo tema={esElla ? 'ella' : 'el'} />
+
       <EncabezadoHoy
         fase={ciclo.fase}
         dia={ciclo.dia}

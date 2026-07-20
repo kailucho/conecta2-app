@@ -36,7 +36,7 @@ export default function ClimaInterno({ fase, tono, zonaRoja, onAvisar }) {
 
   return (
     <TarjetaBase>
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-texto-3">
+      <p className="mb-1 text-xs font-bold uppercase tracking-wide text-acento">
         Tu clima interno
       </p>
       <p className="font-titulo text-lg font-bold text-texto">{CLIMAS[fase.id]}</p>
@@ -70,7 +70,7 @@ export default function ClimaInterno({ fase, tono, zonaRoja, onAvisar }) {
       <button
         onClick={avisar}
         disabled={avisado}
-        className="mt-4 w-full rounded-pill bg-acento px-4 py-3 font-titulo text-sm font-bold text-white transition-transform active:scale-[0.98] disabled:opacity-60"
+        className="btn-acento mt-4 w-full rounded-pill px-4 py-3 font-titulo text-sm font-bold text-white transition-transform active:scale-[0.98] disabled:opacity-60"
       >
         {avisado ? '✓ Le avisamos 💗' : 'Amor, ando sensible, no es contigo 💙'}
       </button>

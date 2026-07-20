@@ -24,46 +24,50 @@
    TOKENS DE TEMA — MODO ESPOSO/NOVIO 💙 (oscuro, tecnológico)
    ============================================================ */
 :root[data-tema='el'] {
-  --tema-bg-primary: #071827;
-  --tema-bg-secondary: #0b2238;
-  --tema-card: #102c46;
-  --tema-card-hover: #153a59;
-  --tema-border: #24506f;
-  --tema-acento: #168bff;         /* azul eléctrico */
-  --tema-acento-fuerte: #006dd6;
+  --tema-bg-primary: #071b30;
+  --tema-bg-secondary: #0b2440;
+  --tema-card: #0f2c4e;
+  --tema-card-hover: #163a63;
+  --tema-border: #23507d;
+  --tema-acento: #2b95ff;         /* azul eléctrico */
+  --tema-acento-fuerte: #0a6fe0;
   --tema-acento-suave: #83e4f2;
-  --tema-brillo: #28c7e8;         /* cian */
-  --tema-text-primary: #f7fbff;
-  --tema-text-secondary: #b7cad9;
-  --tema-text-muted: #7892a7;
+  --tema-brillo: #38d0f0;         /* cian */
+  --tema-text-primary: #f4f9ff;
+  --tema-text-secondary: #bcd2e6;
+  --tema-text-muted: #7f9ab4;
   --tema-success: #63d8b0;
   --tema-warning: #ffd166;
   --tema-danger: #ff6b7a;
   --tema-emoji-rol: '💙';
-  --tema-sombra: 0 8px 24px -12px rgba(40, 199, 232, 0.35);
+  --tema-sombra: 0 10px 30px -14px rgba(43, 149, 255, 0.45);
+  /* Acabado premium por tema */
+  --tema-card-grad: linear-gradient(160deg, rgba(30, 74, 122, 0.55) 0%, rgba(15, 44, 78, 0.9) 60%, rgba(11, 36, 64, 0.95) 100%);
+  --tema-card-borde: linear-gradient(160deg, rgba(90, 190, 255, 0.45), rgba(43, 149, 255, 0.08) 45%, rgba(56, 208, 240, 0.28));
+  --tema-card-brillo-interno: inset 0 1px 0 rgba(150, 220, 255, 0.14);
 }
 
 /* ============================================================
    TOKENS DE TEMA — MODO ESPOSA/NOVIA 💗 (pastel rosado, luminoso)
    ============================================================ */
 :root[data-tema='ella'] {
-  --tema-bg-primary: #fff9fa;
-  --tema-bg-secondary: #fff1f5;
+  --tema-bg-primary: #fff7f9;
+  --tema-bg-secondary: #ffeef4;
   --tema-card: #ffffff;
   --tema-card-hover: #ffeaf1;
-  --tema-border: #ffd1df;
-  --tema-acento: #ff5f93;         /* rosa principal */
-  --tema-acento-fuerte: #f43f7c;
+  --tema-border: #ffdbe6;
+  --tema-acento: #ff4f8b;         /* rosa principal */
+  --tema-acento-fuerte: #ec2f70;
   --tema-acento-suave: #ffaac4;
   --tema-brillo: #ffd76a;         /* amarillo estrellita */
-  --tema-text-primary: #49233a;
-  --tema-text-secondary: #80546a;
-  --tema-text-muted: #ab8496;
+  --tema-text-primary: #3d1c33;
+  --tema-text-secondary: #8a5a72;
+  --tema-text-muted: #b78ea1;
   --tema-success: #6fcfb1;
   --tema-warning: #f5c85b;
   --tema-danger: #f25f7d;
   --tema-emoji-rol: '💗';
-  --tema-sombra: 0 8px 24px -14px rgba(244, 63, 124, 0.28);
+  --tema-sombra: 0 12px 30px -16px rgba(255, 79, 139, 0.32);
 
   /* Colores decorativos extra del universo de ella */
   --wife-blush: #ffd4df;
@@ -72,6 +76,11 @@
   --wife-mint: #a9e8d8;
   --wife-sky: #b8dfff;
   --wife-lilac: #ddc8ff;
+
+  /* Acabado premium por tema */
+  --tema-card-grad: linear-gradient(160deg, #ffffff 0%, #fff5f8 62%, #fff0f5 100%);
+  --tema-card-borde: linear-gradient(160deg, rgba(255, 158, 190, 0.55), rgba(255, 214, 106, 0.25) 45%, rgba(255, 201, 173, 0.4));
+  --tema-card-brillo-interno: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 /* Tema por defecto antes de elegir rol (usa el oscuro para no cegar). */
@@ -131,17 +140,90 @@ h1, h2, h3, h4, .fuente-titulo {
 /* ============================================================
    FONDOS DECORATIVOS POR TEMA
    ============================================================ */
-/* Modo ella: degradado cálido rosado. */
+/* Modo ella: degradado cálido rosado con halos en esquinas y puntos de luz. */
 :root[data-tema='ella'] .fondo-app {
   background:
-    radial-gradient(120% 80% at 50% -10%, #ffe3ec 0%, transparent 55%),
-    linear-gradient(180deg, #fff9fa 0%, #fff1f5 100%);
+    radial-gradient(60% 40% at 12% 8%, rgba(255, 209, 224, 0.55) 0%, transparent 60%),
+    radial-gradient(55% 40% at 92% 6%, rgba(255, 224, 199, 0.45) 0%, transparent 60%),
+    radial-gradient(70% 45% at 50% 102%, rgba(255, 205, 224, 0.4) 0%, transparent 60%),
+    radial-gradient(120% 80% at 50% -12%, #ffe6ee 0%, transparent 58%),
+    linear-gradient(180deg, #fff7f9 0%, #ffeef4 100%);
+  background-attachment: fixed;
 }
-/* Modo él: azul marino casi negro con brillo azul sutil. */
+/* Modo él: azul marino profundo con brillo azul/cian y halos. */
 :root[data-tema='el'] .fondo-app {
   background:
-    radial-gradient(120% 70% at 50% -10%, #0e2e4d 0%, transparent 55%),
-    linear-gradient(180deg, #071827 0%, #0b2238 100%);
+    radial-gradient(55% 38% at 14% 8%, rgba(43, 149, 255, 0.22) 0%, transparent 62%),
+    radial-gradient(50% 35% at 88% 10%, rgba(56, 208, 240, 0.16) 0%, transparent 62%),
+    radial-gradient(75% 45% at 50% 104%, rgba(10, 111, 224, 0.2) 0%, transparent 62%),
+    radial-gradient(120% 75% at 50% -12%, #0f3358 0%, transparent 58%),
+    linear-gradient(180deg, #071b30 0%, #0b2440 100%);
+  background-attachment: fixed;
+}
+
+/* ============================================================
+   ACABADO PREMIUM DE TARJETAS
+   ============================================================ */
+.tarjeta-tema {
+  position: relative;
+  background: var(--tema-card-grad, var(--tema-card));
+  border: 1px solid transparent;
+  border-radius: 1.25rem;
+  box-shadow: var(--tema-sombra), var(--tema-card-brillo-interno, none);
+  background-clip: padding-box;
+}
+/* Borde con gradiente sutil vía pseudoelemento (no altera el layout). */
+.tarjeta-tema::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--tema-card-borde, var(--tema-border));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ============================================================
+   FONDO DECORATIVO (nubes, estrellas, destellos)
+   ============================================================ */
+.fondo-deco {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.fondo-deco svg { display: block; }
+
+@keyframes deco-parpadeo {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.95; }
+}
+@keyframes deco-derivar {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(10px); }
+}
+.deco-parpadeo { animation: deco-parpadeo 3.5s ease-in-out infinite; }
+.deco-derivar { animation: deco-derivar 9s ease-in-out infinite; }
+
+/* ============================================================
+   BOTÓN PRIMARIO — acabado con gradiente y brillo del tema
+   ============================================================ */
+.btn-acento {
+  background-image: linear-gradient(135deg, var(--tema-acento) 0%, var(--tema-acento-fuerte) 100%);
+  box-shadow:
+    0 8px 18px -8px var(--tema-acento-fuerte),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+:root[data-tema='el'] .btn-acento {
+  box-shadow:
+    0 8px 20px -8px rgba(43, 149, 255, 0.6),
+    inset 0 1px 0 rgba(150, 220, 255, 0.3);
 }
 
 /* ============================================================
@@ -181,10 +263,3 @@ h1, h2, h3, h4, .fuente-titulo {
 /* Scrollbar discreta. */
 ::-webkit-scrollbar { width: 0; height: 0; }
 
-/* Utilidad: tarjeta base del tema. */
-.tarjeta-tema {
-  background-color: var(--tema-card);
-  border: 1px solid var(--tema-border);
-  border-radius: 1.25rem;
-  box-shadow: var(--tema-sombra);
-}

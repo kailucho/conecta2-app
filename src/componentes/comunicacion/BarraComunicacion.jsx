@@ -92,7 +92,7 @@ export default function BarraComunicacion({ alAbrirCentro, alAbrirMensaje, onRea
           onPointerUp={onPressEnd}
           onPointerLeave={onPressCancel}
           aria-label="Enviar una reacción rápida"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-acento text-2xl transition-transform active:scale-90"
+          className="btn-acento flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-2xl transition-transform active:scale-90"
         >
           💗
         </button>

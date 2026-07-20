@@ -28,6 +28,13 @@ export default function Medidor({ valor = 0, max = 10, etiqueta, sublabel }) {
   return (
     <div className="relative flex flex-col items-center">
       <svg viewBox="0 0 200 120" className="w-full max-w-[260px]">
+        <defs>
+          <linearGradient id="medidorArco" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="var(--tema-acento-fuerte)" />
+            <stop offset="0.55" stopColor="var(--tema-acento)" />
+            <stop offset="1" stopColor="var(--tema-brillo)" />
+          </linearGradient>
+        </defs>
         {/* Arco de fondo */}
         <path
           d={arco(cx, cy, r, 180, 0)}
@@ -35,15 +42,16 @@ export default function Medidor({ valor = 0, max = 10, etiqueta, sublabel }) {
           stroke="var(--tema-border)"
           strokeWidth="14"
           strokeLinecap="round"
+          opacity="0.55"
         />
-        {/* Arco de valor con brillo del tema */}
+        {/* Arco de valor con gradiente y brillo del tema */}
         <path
           d={arco(cx, cy, r, 180, angulo)}
           fill="none"
-          stroke="var(--tema-acento)"
+          stroke="url(#medidorArco)"
           strokeWidth="14"
           strokeLinecap="round"
-          style={{ filter: 'drop-shadow(0 0 6px var(--tema-brillo))' }}
+          style={{ filter: 'drop-shadow(0 0 7px var(--tema-brillo))' }}
         />
         {/* Aguja */}
         <line
