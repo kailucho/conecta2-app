@@ -221,7 +221,7 @@ export default function Ajustes({ irAGuia, seccionObjetivo, alConsumirObjetivo }
             <input
               value={config.nombreApp || ''}
               onChange={(e) => actualizarConfig({ nombreApp: e.target.value })}
-              placeholder="Nosotros"
+              placeholder="Conecta2"
               className="mt-1 w-full rounded-pill border border-borde bg-tarjeta px-3 py-2 text-sm text-texto"
             />
             <p className="mt-1 text-xs text-texto-3">
@@ -273,7 +273,7 @@ export default function Ajustes({ irAGuia, seccionObjetivo, alConsumirObjetivo }
       <p className="px-2 text-center text-xs text-texto-3">
         {NOTA_MEDICA}
         <br />
-        Modo Pareja · hecho con 💙💗
+        Conecta2 · hecho con 💙💗
       </p>
     </div>
   )

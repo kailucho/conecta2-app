@@ -138,7 +138,7 @@ export default function Onboarding() {
           <div className="animate-aparecer text-center">
             <div className="mb-6 text-6xl">💙💗</div>
             <h1 className="mb-3 font-titulo text-3xl font-extrabold text-texto">
-              Modo Pareja
+              Conecta2
             </h1>
             <p className="mx-auto mb-10 max-w-xs text-texto-2">
               Una app para entenderse mejor, cuidarse y estar más conectados.

@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['iconos/*.svg', 'fuentes/*.ttf'],
       manifest: {
-        name: 'Modo Pareja',
-        short_name: 'Nosotros',
+        name: 'Conecta2',
+        short_name: 'Conecta2',
         description: 'Una app para entenderse mejor en pareja 💙💗',
         theme_color: '#071827',
         background_color: '#071827',

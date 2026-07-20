@@ -1,8 +1,8 @@
 {
-  "name": "modo-pareja",
+  "name": "conecta2",
   "private": true,
   "version": "1.0.0",
-  "description": "PWA de pareja con dos versiones espejo (Modo Esposo/Novio y Modo Esposa/Novia)",
+  "description": "Conecta2, una PWA para entenderse mejor y cuidarse en pareja",
   "type": "module",
   "scripts": {
     "dev": "vite",

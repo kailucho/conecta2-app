@@ -78,7 +78,7 @@ describe('Prueba de humo de la app', () => {
         <App />
       </ProveedorApp>,
     )
-    await waitFor(() => expect(screen.getByText('Modo Pareja')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('Conecta2')).toBeTruthy())
     expect(screen.getByText('Empezar')).toBeTruthy()
   })
 

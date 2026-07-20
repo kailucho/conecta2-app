@@ -1,4 +1,4 @@
-# Plan de simplificación UX — "Modo Pareja"
+# Plan de simplificación UX — "Conecta2"
 
 > Documento de arquitectura (Etapa 1). No contiene código de producción; el pseudocódigo solo ilustra la arquitectura. La implementación (Etapa 2) se documenta aparte en `docs/ux-simplification-implementation.md`.
 

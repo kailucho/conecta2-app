@@ -1,4 +1,4 @@
-# Implementación de la simplificación UX — "Modo Pareja"
+# Implementación de la simplificación UX — "Conecta2"
 
 > Etapa 2 (implementación). Guiada por `docs/ux-simplification-plan.md`. Todos los cambios preservan el modelo de datos, la identidad visual por rol y la PWA.
 

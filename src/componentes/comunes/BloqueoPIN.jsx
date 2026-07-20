@@ -29,7 +29,7 @@ export default function BloqueoPIN({ pin, nombreApp, onDesbloquear }) {
     <div className="fondo-app flex min-h-screen flex-col items-center justify-center px-8">
       <div className="mb-6 text-5xl">🔒</div>
       <p className="mb-1 font-titulo text-xl font-bold text-texto">
-        {nombreApp || 'Nosotros'}
+        {nombreApp || 'Conecta2'}
       </p>
       <p className="mb-6 text-sm text-texto-3">Ingresa tu PIN</p>
 

@@ -34,7 +34,7 @@ const CONFIG_POR_DEFECTO = {
   vibracion: true,
   reducirMovimiento: false,
   gamificacionActiva: true,
-  nombreApp: 'Nosotros',
+  nombreApp: 'Conecta2',
   pin: null,
   notifSensibles: false, // false = ocultar contenido sensible en notificaciones
   contadorUsoIA: 0,
