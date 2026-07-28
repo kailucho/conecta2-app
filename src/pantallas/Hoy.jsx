@@ -113,22 +113,27 @@ export default function Hoy({ abrirSOS, irA }) {
         accesorios={!esElla && mostrarPronostico ? pronosticoHoy.accesorios : []}
         alTocarPersonaje={abrirCentroOExplicar}
       />
-      <EstadoActivoChip />
 
-      <div className="mt-3 space-y-3">
+      <div className="mt-3 space-y-4">
+        <EstadoActivoChip />
         {/* Sin datos de ciclo aún (y, en modo él, sin alertas/ánimo de la pareja) */}
         {mostrarSinDatos && (
           <TarjetaBase>
             <p className="text-texto-2">
               {esElla
-                ? <>Todavía no tenemos registrado el primer día de la última
-                    menstruación. Ve a la pestaña{' '}
-                    <strong className="text-texto">Mes 📅</strong> para
-                    registrarla y activar el cálculo de fases.</>
+                ? 'Todavía no tenemos registrado el primer día de la última menstruación.'
                 : <>Aún no hay señales para el radar de hoy. En cuanto tu
                     pareja comparta cómo se siente, o registre su ciclo, el
                     radar se activa.</>}
             </p>
+            {esElla && (
+              <button
+                onClick={() => irA('mes')}
+                className="mt-3 w-full rounded-pill bg-acento/10 py-2.5 text-sm font-bold text-acento transition-transform active:scale-[0.98]"
+              >
+                Ir a Calendario 📅
+              </button>
+            )}
           </TarjetaBase>
         )}
 

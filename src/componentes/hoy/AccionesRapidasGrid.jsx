@@ -15,12 +15,17 @@ import { useState } from 'react'
 import { accionPorId, ACCIONES_DESTACADAS_HOY } from '../../datos/accionesRapidas.js'
 import { usarEnvioInteraccion } from '../comunicacion/usarEnvioInteraccion.js'
 import { claveDia } from '../../motor/fechas.js'
+import EncabezadoSeccion from './EncabezadoSeccion.jsx'
 
+// Mismo patrón que los chips de Energía/Sensibilidad/Antojos (Velocimetro /
+// ClimaInterno): opacidad sobre token de tema, para que la insignia se
+// adapte sola al modo oscuro (Esposo) o claro (Esposa) en vez de un pastel
+// fijo pensado solo para fondo claro.
 const COLOR_POR_ID = {
-  hambre: 'bg-emerald-100',
-  engreir: 'bg-pink-100',
-  extrano: 'bg-sky-100',
-  meti_pata: 'bg-amber-100',
+  hambre: 'bg-exito/15 text-exito',
+  engreir: 'bg-peligro/15 text-peligro',
+  extrano: 'bg-acento/15 text-acento',
+  meti_pata: 'bg-alerta/15 text-alerta',
 }
 
 export default function AccionesRapidasGrid({ onReaccion, onVerMas }) {
@@ -43,17 +48,10 @@ export default function AccionesRapidasGrid({ onReaccion, onVerMas }) {
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between px-1">
-        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-texto-3">
-          <span aria-hidden="true">⚡</span> Acciones rápidas
-        </p>
-        {onVerMas && (
-          <button onClick={onVerMas} className="text-xs font-semibold text-acento">
-            Ver más
-          </button>
-        )}
-      </div>
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <EncabezadoSeccion icono="⚡" accion={onVerMas ? 'Ver más' : undefined} alTocarAccion={onVerMas}>
+        Acciones rápidas
+      </EncabezadoSeccion>
+      <div className="scroll-fade-x -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
         {ACCIONES_DESTACADAS_HOY.map((id) => {
           const accion = accionPorId(id)
           if (!accion) return null
@@ -68,7 +66,7 @@ export default function AccionesRapidasGrid({ onReaccion, onVerMas }) {
             >
               <span
                 aria-hidden="true"
-                className={`flex h-9 w-9 items-center justify-center rounded-full text-lg text-slate-700 ${COLOR_POR_ID[id]}`}
+                className={`flex h-9 w-9 items-center justify-center rounded-full text-lg ${COLOR_POR_ID[id]}`}
               >
                 {confirmado ? '✅' : accion.emoji}
               </span>

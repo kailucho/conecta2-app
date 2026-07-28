@@ -288,3 +288,12 @@ h1, h2, h3, h4, .fuente-titulo {
 /* Scrollbar discreta. */
 ::-webkit-scrollbar { width: 0; height: 0; }
 
+/* ============================================================
+   FADE DE SCROLL HORIZONTAL — señala con un degradado en los bordes que una
+   fila (acciones rápidas, pronóstico semanal) tiene más contenido al deslizar.
+   ============================================================ */
+.scroll-fade-x {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+}
+

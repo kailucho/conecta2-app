@@ -35,7 +35,7 @@ export default function EncabezadoHoy({ rol, nombrePersonaje, expresion, accesor
           accesorios={accesorios}
           alTocar={alTocarPersonaje}
         />
-        <span className="absolute -bottom-1 right-0 whitespace-nowrap rounded-pill bg-white px-3 py-1 text-xs font-bold text-slate-800 shadow-lg">
+        <span className="absolute -bottom-1 right-0 whitespace-nowrap rounded-pill bg-tarjeta px-3 py-1 text-xs font-bold text-texto shadow-lg">
           {nombrePersonaje}
         </span>
       </div>

@@ -19,7 +19,7 @@ export default function EstadoActivoChip() {
   const def = alertaPorId(activa.actionId)
 
   return (
-    <div className="mx-auto mt-1 flex w-fit items-center gap-2 rounded-pill border border-borde bg-tarjeta px-3 py-1.5 text-sm text-texto-2">
+    <div className="mx-auto flex w-fit items-center gap-2 rounded-pill border border-borde bg-tarjeta px-3 py-1.5 text-sm text-texto-2">
       <span>
         {def?.emoji} {def?.label || 'Estado activo'}
       </span>

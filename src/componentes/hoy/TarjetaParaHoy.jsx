@@ -142,6 +142,9 @@ export default function TarjetaParaHoy({ semilla, faseId, hayDatos, onReaccion }
                 📞
               </span>
               {debeUsarWhatsApp(perfil, config) ? 'Enviar por WhatsApp' : 'Enviar'}
+              {config.gamificacionActiva && (
+                <span className="text-xs font-bold text-white/80">+5 pts</span>
+              )}
             </>
           )}
         </button>

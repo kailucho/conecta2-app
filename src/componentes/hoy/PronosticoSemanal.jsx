@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import TarjetaBase from '../comunes/TarjetaBase.jsx'
 import ModalHoja from '../comunes/ModalHoja.jsx'
+import EncabezadoSeccion from './EncabezadoSeccion.jsx'
 import { pronosticoSemana } from '../../motor/pronosticoPareja.js'
 import { fechaLarga, aMedianoche } from '../../motor/fechas.js'
 import { abrirWhatsApp } from '../../servicios/whatsappService.js'
@@ -24,13 +25,11 @@ export default function PronosticoSemanal({ ctx, whatsappPareja }) {
 
   return (
     <TarjetaBase>
-      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-acento">
-        Pronóstico de la semana
-      </p>
+      <EncabezadoSeccion icono="📅">Pronóstico de la semana</EncabezadoSeccion>
       <div
         role="list"
         aria-label="Pronóstico de los próximos 7 días"
-        className="flex gap-2 overflow-x-auto pb-1"
+        className="scroll-fade-x -mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
       >
         {semana.map((dia, i) => {
           // dia.fecha es "AAAA-MM-DD": parsear con aMedianoche (fecha LOCAL),
@@ -46,7 +45,7 @@ export default function PronosticoSemanal({ ctx, whatsappPareja }) {
               role="listitem"
               onClick={() => setSeleccion(dia)}
               aria-label={`${diaCorto}: ${dia.nivel} de 10, ${dia.nivelTextual}`}
-              className={`flex min-h-touch min-w-[64px] shrink-0 flex-col items-center gap-0.5 rounded-xl border bg-tarjeta px-2 py-2 text-center transition-transform active:scale-95 ${
+              className={`flex min-h-touch min-w-[64px] shrink-0 flex-col items-center gap-0.5 rounded-2xl border bg-tarjeta px-2 py-2 text-center transition-transform active:scale-95 ${
                 esHoy ? 'border-2 border-acento' : 'border-borde'
               }`}
             >
