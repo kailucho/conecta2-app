@@ -11,11 +11,12 @@ import { claveDia } from '../../motor/fechas.js'
 import { accionPorId } from '../../datos/accionesRapidas.js'
 import { comoLlamarPareja } from '../../datos/lenguaje.js'
 import { usarEnvioInteraccion } from './usarEnvioInteraccion.js'
+import { abrirWhatsApp, debeUsarWhatsApp } from '../../servicios/whatsappService.js'
 
 const GESTOS = ['extrano', 'besitos', 'corazon', 'ganas_verte', 'buena_noticia']
 
 export default function FlujoCarino({ alConfirmar, alVolver, onReaccion, alAbrirMensaje }) {
-  const { perfil, enviarInteraccionPareja } = usarApp()
+  const { perfil, config, enviarInteraccionPareja } = usarApp()
   const { otorgar } = usarPuntos()
   const enviarAccion = usarEnvioInteraccion()
   const [modoAprecio, setModoAprecio] = useState(false)
@@ -36,13 +37,28 @@ export default function FlujoCarino({ alConfirmar, alVolver, onReaccion, alAbrir
   }
 
   async function enviarAprecio() {
-    if (!texto.trim()) return
+    const cuerpo = texto.trim()
+    if (!cuerpo) return
+
+    if (debeUsarWhatsApp(perfil, config)) {
+      const resultado = await abrirWhatsApp({ telefono: config.whatsappPareja, texto: cuerpo })
+      if (resultado.ok) await otorgar(15, `detalle_preparado:aprecio:${claveDia(new Date())}`)
+      onReaccion?.('amor')
+      alConfirmar({
+        icono: '💛',
+        titulo: 'Mensaje preparado para WhatsApp',
+        mensaje: null,
+        escena: true,
+      })
+      return
+    }
+
     const resultado = await enviarInteraccionPareja({
       type: 'aprecio',
       category: 'gesture',
-      note: texto.trim(),
+      note: cuerpo,
       valencia: 1,
-    }, { tipo: 'aprecio', note: texto.trim() })
+    }, { tipo: 'aprecio', note: cuerpo })
     if (!resultado.ok) return
     await otorgar(15, `aprecio:${claveDia(new Date())}`)
     onReaccion?.('amor')

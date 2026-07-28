@@ -141,7 +141,7 @@ export default function Mes() {
   if (ciclo.etapaVida === 'menopausia') {
     return (
       <div className="animate-aparecer space-y-3">
-        <h1 className="font-titulo text-2xl font-bold text-texto">Mes 📅</h1>
+        <h1 className="font-titulo text-2xl font-bold text-texto">Calendario 📅</h1>
         <TarjetaBase>
           <p className="font-titulo text-lg font-bold text-texto">
             {GUIA_MENOPAUSIA.titulo}
@@ -157,7 +157,7 @@ export default function Mes() {
 
   return (
     <div className="animate-aparecer space-y-3">
-      <h1 className="font-titulo text-2xl font-bold text-texto">Mes 📅</h1>
+      <h1 className="font-titulo text-2xl font-bold text-texto">Calendario 📅</h1>
 
       {/* Registro de regla */}
       <TarjetaBase>

@@ -37,6 +37,9 @@ function sembrar() {
       privacidadHormonal: 'todo',
     }),
   )
+  // Canal predeterminado 'conecta2' para probar el envío interno explícitamente
+  // (el default de la app es 'whatsapp', ver whatsappService.debeUsarWhatsApp).
+  localStorage.setItem('mp:config', JSON.stringify({ canalPredeterminado: 'conecta2' }))
 }
 
 // Espera a que el contexto hidrate el perfil antes de montar el centro.

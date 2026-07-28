@@ -1,27 +1,27 @@
 // ============================================================
-// Hoy 🏠 — pantalla principal, simplificada.
-// Estructura ligera: encabezado, personaje interactivo, resumen del día
-// (Clima/Velocímetro por rol), mensajes de la pareja, una sola tarjeta "Para
-// hoy" y una barra de comunicación. Las interacciones secundarias viven en el
-// centro de interacciones (bottom sheet) que abre ＋ o el personaje.
+// Hoy 🏠 — pantalla principal, estilo "app del clima": encabezado con marca
+// y personaje, pronóstico principal (Radar/Bienestar), recomendación del
+// día, pronóstico de 7 días, acciones rápidas, mensajes de la pareja y una
+// barra de comunicación. Las interacciones secundarias viven en el centro
+// de interacciones (bottom sheet) que abre ＋ o el personaje.
 // ============================================================
 
 import { useEffect, useRef, useState } from 'react'
 import { usarApp } from '../contexto/AppContexto.jsx'
 import { usarCiclo } from '../contexto/usarCiclo.js'
 import { diaDelAnio } from '../motor/fechas.js'
-import { comoLlamarParejaCap } from '../datos/lenguaje.js'
-import { calcularRadarPeligrosidad } from '../motor/radarPeligrosidad.js'
+import { pronosticoDelDia } from '../motor/pronosticoPareja.js'
 import EncabezadoHoy from '../componentes/comunes/EncabezadoHoy.jsx'
 import Velocimetro from '../componentes/hoy/Velocimetro.jsx'
 import ClimaInterno from '../componentes/hoy/ClimaInterno.jsx'
+import PronosticoSemanal from '../componentes/hoy/PronosticoSemanal.jsx'
+import AccionesRapidasGrid from '../componentes/hoy/AccionesRapidasGrid.jsx'
 import TarjetaParaHoy from '../componentes/hoy/TarjetaParaHoy.jsx'
 import EstadoActivoChip from '../componentes/hoy/EstadoActivoChip.jsx'
 import BotonSOS from '../componentes/comunes/BotonSOS.jsx'
 import TarjetaBase from '../componentes/comunes/TarjetaBase.jsx'
-import Personaje from '../componentes/personajes/Personaje.jsx'
 import FondoDecorativo from '../componentes/comunes/FondoDecorativo.jsx'
-import { EXPRESIONES, expresionPorFase, expresionPorAccion } from '../motor/expresiones.js'
+import { expresionPorAccion } from '../motor/expresiones.js'
 import { interaccionEntranteMasReciente } from '../motor/interacciones.js'
 import BandejaPareja from '../componentes/transversales/BandejaPareja.jsx'
 import ConfirmacionRespuesta from '../componentes/transversales/ConfirmacionRespuesta.jsx'
@@ -29,28 +29,18 @@ import SugerenciaRegla from '../componentes/hoy/SugerenciaRegla.jsx'
 import BarraComunicacion from '../componentes/comunicacion/BarraComunicacion.jsx'
 import CentroInteracciones from '../componentes/comunicacion/CentroInteracciones.jsx'
 import MensajeLibre from '../componentes/comunicacion/MensajeLibre.jsx'
-import { parejaVinculada } from '../servicios/syncService.js'
 
 export default function Hoy({ abrirSOS, irA }) {
-  const { perfil, config, interacciones, solicitarVinculacion } = usarApp()
+  const { perfil, config, interacciones } = usarApp()
   const ciclo = usarCiclo()
   const semilla = diaDelAnio()
   const esElla = perfil.rol === 'ella'
-  const vinculada = parejaVinculada(perfil)
 
   const [centroAbierto, setCentroAbierto] = useState(false)
   const [mensajeAbierto, setMensajeAbierto] = useState(false)
   const [reaccion, setReaccion] = useState(null) // { expresion, key }
   const timerReaccion = useRef(null)
   const ultimaInteraccionVista = useRef(undefined) // undefined = aún sin inicializar
-
-  // Privacidad: en modo él, si la pareja restringió a "solo alertas", no se
-  // muestra la fase en el encabezado. (En modo ella siempre ve su propia info.)
-  const mostrarFase = esElla || perfil.privacidadHormonal !== 'solo_alertas'
-
-  const saludo = esElla
-    ? '¿Cómo amaneciste? 💗'
-    : `¿Cómo está ${comoLlamarParejaCap(perfil.rol, perfil.tipoRelacion)}? 💙`
 
   // El personaje reacciona brevemente a lo que se envía; luego vuelve a su base.
   function reaccionar(expresion) {
@@ -60,17 +50,20 @@ export default function Hoy({ abrirSOS, irA }) {
     timerReaccion.current = setTimeout(() => setReaccion(null), 4000)
   }
 
-  // Radar de peligrosidad (modo él): combina alertas/ánimo declarados por la
-  // pareja con el score del ciclo, respetando la privacidad hormonal.
-  const radar = calcularRadarPeligrosidad({
-    scoreCiclo: ciclo.hayDatos && !ciclo.menopausia ? ciclo.score : null,
+  // Pronóstico de hoy: única fuente para Radar/Bienestar, semáforo del
+  // encabezado y expresión base del personaje. Respeta privacidad y prioriza
+  // el estado real declarado (ver motor/pronosticoPareja.js).
+  const pronosticoHoy = pronosticoDelDia(new Date(), {
+    ciclo,
+    fechaUltimaRegla: ciclo.fechaUltima,
     interacciones,
     userId: perfil.userId,
     partnerId: perfil.partnerId,
     privacidadHormonal: perfil.privacidadHormonal,
+    tono: perfil.tonoHumor,
   })
-  const mostrarRadar = !esElla && !ciclo.menopausia && (ciclo.hayDatos || radar.hayInsumos)
-  const mostrarSinDatos = !ciclo.menopausia && !ciclo.hayDatos && !mostrarRadar
+  const mostrarPronostico = !ciclo.menopausia
+  const mostrarSinDatos = !ciclo.menopausia && pronosticoHoy.confianza === 'sin_datos'
 
   // Astro Azul reacciona brevemente cuando llega una interacción NUEVA de la
   // pareja (no en cada render, y no se repite por el mismo id).
@@ -90,30 +83,22 @@ export default function Hoy({ abrirSOS, irA }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interacciones, perfil.userId, perfil.partnerId])
 
-  const expresionBase =
-    esElla && ciclo.hayDatos && !ciclo.menopausia
-      ? expresionPorFase(ciclo.fase.id)
-      : EXPRESIONES.feliz
-  const expresionMostrada = reaccion?.expresion || expresionBase
+  const expresionMostrada = reaccion?.expresion || pronosticoHoy.expresion
 
   function abrirMensajeDesdeCentro() {
     setCentroAbierto(false)
     setMensajeAbierto(true)
   }
 
+  // Vincular a la pareja es opcional: el centro de interacciones y el
+  // mensaje libre siempre se abren. Sin vínculo, sus acciones preparan un
+  // mensaje para WhatsApp en vez de enviar internamente (ver
+  // usarEnvioInteraccion.js / MensajeLibre.jsx).
   function abrirCentroOExplicar() {
-    if (!vinculada) {
-      solicitarVinculacion({ tipo: 'explorar_interacciones' })
-      return
-    }
     setCentroAbierto(true)
   }
 
   function abrirMensajeOExplicar() {
-    if (!vinculada) {
-      solicitarVinculacion({ tipo: 'mensaje', note: null })
-      return
-    }
     setMensajeAbierto(true)
   }
 
@@ -122,31 +107,12 @@ export default function Hoy({ abrirSOS, irA }) {
       <FondoDecorativo tema={esElla ? 'ella' : 'el'} />
 
       <EncabezadoHoy
-        fase={ciclo.fase}
-        dia={ciclo.dia}
-        mostrarFase={mostrarFase && ciclo.hayDatos && !ciclo.menopausia}
-        saludo={saludo}
+        rol={perfil.rol}
+        nombrePersonaje={esElla ? 'Estrellita' : 'Astro Azul'}
+        expresion={expresionMostrada}
+        accesorios={!esElla && mostrarPronostico ? pronosticoHoy.accesorios : []}
+        alTocarPersonaje={abrirCentroOExplicar}
       />
-
-      {/* Personaje héroe interactivo: abre el centro de interacciones. */}
-      <div className="mb-1 flex justify-center">
-        <div
-          key={reaccion?.key}
-          className={
-            reaccion && !config.reducirMovimiento
-              ? 'animate-[reaccion-pop_0.4s_ease-out]'
-              : ''
-          }
-        >
-          <Personaje
-            rol={perfil.rol}
-            tamano={150}
-            expresion={expresionMostrada}
-            accesorios={!esElla && mostrarRadar ? radar.accesorios : []}
-            alTocar={abrirCentroOExplicar}
-          />
-        </div>
-      </div>
       <EstadoActivoChip />
 
       <div className="mt-3 space-y-3">
@@ -179,27 +145,14 @@ export default function Hoy({ abrirSOS, irA }) {
           </TarjetaBase>
         )}
 
-        {/* Resumen del día según rol */}
-        {esElla && ciclo.hayDatos && !ciclo.menopausia && (
-          <ClimaInterno
-            fase={ciclo.fase}
-            tono={perfil.tonoHumor}
-            zonaRoja={ciclo.zonaRoja}
-          />
+        {/* Pronóstico principal del día según rol */}
+        {mostrarPronostico && !mostrarSinDatos && (
+          esElla ? (
+            <ClimaInterno pronostico={pronosticoHoy} tono={perfil.tonoHumor} onAvisar={() => {}} />
+          ) : (
+            <Velocimetro pronostico={pronosticoHoy} tono={perfil.tonoHumor} semilla={semilla} />
+          )
         )}
-        {mostrarRadar && (
-          <Velocimetro
-            radar={radar}
-            fase={radar.mostrarFase ? ciclo.fase : null}
-            tono={perfil.tonoHumor}
-            semilla={semilla}
-          />
-        )}
-
-        {/* Mensajes recibidos de la pareja (null si no hay) */}
-        <BandejaPareja />
-        <ConfirmacionRespuesta />
-        <SugerenciaRegla />
 
         {/* Única recomendación del día */}
         <TarjetaParaHoy
@@ -208,6 +161,30 @@ export default function Hoy({ abrirSOS, irA }) {
           hayDatos={ciclo.hayDatos}
           onReaccion={reaccionar}
         />
+
+        {/* Pronóstico de los próximos 7 días: nunca se muestra si hoy no hay
+            datos suficientes (no se fabrica un número falso para la semana). */}
+        {mostrarPronostico && !mostrarSinDatos && config.mostrarPronosticoSemanal !== false && (
+          <PronosticoSemanal
+            ctx={{
+              ciclo,
+              fechaUltimaRegla: ciclo.fechaUltima,
+              interacciones,
+              userId: perfil.userId,
+              partnerId: perfil.partnerId,
+              privacidadHormonal: perfil.privacidadHormonal,
+              tono: perfil.tonoHumor,
+            }}
+          />
+        )}
+
+        {/* Acciones rápidas destacadas */}
+        <AccionesRapidasGrid onReaccion={reaccionar} onVerMas={abrirCentroOExplicar} />
+
+        {/* Mensajes recibidos de la pareja (null si no hay) */}
+        <BandejaPareja />
+        <ConfirmacionRespuesta />
+        <SugerenciaRegla />
       </div>
 
       {/* Barra de comunicación fija + sheets */}

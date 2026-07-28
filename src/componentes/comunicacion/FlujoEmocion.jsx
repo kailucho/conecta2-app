@@ -10,6 +10,8 @@ import { usarPuntos } from '../../contexto/usarPuntos.js'
 import { claveDia, finDelDia } from '../../motor/fechas.js'
 import { alertaPorId } from '../../datos/alertasEstado.js'
 import { notificar, vibrar } from '../../servicios/notificaciones.js'
+import { parejaVinculada } from '../../servicios/syncService.js'
+import { abrirWhatsApp, debeUsarWhatsApp } from '../../servicios/whatsappService.js'
 
 // tipo 'animo' → gesto positivo (valencia 1); tipo 'alerta' → estado (valencia 0).
 const EMOCIONES = [
@@ -34,8 +36,9 @@ const NECESIDADES = [
 ]
 
 export default function FlujoEmocion({ alConfirmar, alVolver, onReaccion }) {
-  const { config, enviarInteraccionPareja } = usarApp()
+  const { perfil, config, enviarInteraccionPareja, crearInteraccionLocal } = usarApp()
   const { otorgar } = usarPuntos()
+  const vinculada = parejaVinculada(perfil)
   const [elegida, setElegida] = useState(null)
   const [verMas, setVerMas] = useState(false)
 
@@ -48,36 +51,60 @@ export default function FlujoEmocion({ alConfirmar, alVolver, onReaccion }) {
     }
 
     let mensajeConfirma
+    let canalWhatsapp = false
     let resultado
     if (emocion.tipo === 'animo') {
-      resultado = await enviarInteraccionPareja({
-        ...base,
-        type: 'animo',
-        actionId: emocion.actionId,
-        category: 'gesture',
-        valencia: 1,
-      }, { tipo: 'animo', actionId: emocion.actionId, note: notaTexto })
+      // Gesto positivo pensado para la pareja: respeta el canal predeterminado
+      // (Ajustes → Comunicación). Sin vínculo, o si el canal es WhatsApp
+      // aunque haya vínculo, se prepara un mensaje en vez de enviar interno.
+      if (debeUsarWhatsApp(perfil, config)) {
+        const texto = notaTexto || `${emocion.emoji} ${emocion.label}`
+        const resultadoWa = await abrirWhatsApp({ telefono: config.whatsappPareja, texto })
+        if (resultadoWa.ok) await otorgar(5, `detalle_preparado:animo:${hoy}`)
+        canalWhatsapp = true
+        mensajeConfirma = 'Mensaje preparado para WhatsApp 💗'
+        resultado = { ok: resultadoWa.ok }
+      } else {
+        const datos = {
+          ...base,
+          senderId: perfil.userId,
+          type: 'animo',
+          actionId: emocion.actionId,
+          category: 'gesture',
+          valencia: 1,
+        }
+        resultado = await enviarInteraccionPareja(datos, { tipo: 'animo', actionId: emocion.actionId, note: notaTexto })
+        if (!resultado.ok) return
+        await otorgar(5, `animo:${hoy}`)
+        mensajeConfirma = 'Tu pareja verá cómo te sientes 💗'
+      }
       if (!resultado.ok) return
-      await otorgar(5, `animo:${hoy}`)
-      mensajeConfirma = 'Tu pareja verá cómo te sientes 💗'
     } else {
+      // Estado real: es un registro PERSONAL (spec §11) — funciona local sin
+      // pareja, y además sincroniza cuando sí hay vínculo.
       const def = alertaPorId(emocion.actionId)
-      resultado = await enviarInteraccionPareja({
+      const datos = {
         ...base,
+        senderId: perfil.userId,
         type: 'alerta_estado',
         actionId: emocion.actionId,
         category: 'feeling',
         valencia: 0,
         expiresAt: finDelDia(),
-      }, { tipo: 'alerta_estado', actionId: emocion.actionId, note: notaTexto })
+      }
+      resultado = vinculada
+        ? await enviarInteraccionPareja(datos, { tipo: 'alerta_estado', actionId: emocion.actionId, note: notaTexto })
+        : await crearInteraccionLocal(datos)
       if (!resultado.ok) return
       await otorgar(5, `estado:${hoy}`)
-      mensajeConfirma = def?.mensaje || 'Tu pareja sabrá cómo tratarte hoy 💛'
+      mensajeConfirma = vinculada ? (def?.mensaje || 'Tu pareja sabrá cómo tratarte hoy 💛') : 'Quedó registrado tu estado de hoy 💛'
     }
 
-    notificar('Tu pareja compartió cómo se siente', {
-      ocultarSensible: !config.notifSensibles,
-    })
+    if (vinculada && !canalWhatsapp) {
+      notificar('Tu pareja compartió cómo se siente', {
+        ocultarSensible: !config.notifSensibles,
+      })
+    }
     vibrar([30], config.vibracion)
     onReaccion?.(emocion.expresion)
     alConfirmar({ icono: emocion.emoji, titulo: 'Se lo hiciste saber', mensaje: mensajeConfirma })

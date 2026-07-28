@@ -16,6 +16,8 @@ import {
   parejaActual,
 } from '../../servicios/coupleService.js'
 import { upsertPerfil } from '../../servicios/profileService.js'
+import IndicadorConexion from '../comunes/IndicadorConexion.jsx'
+import IndicadorSync from '../comunes/IndicadorSync.jsx'
 
 const MENSAJES_ERROR = {
   supabase_no_configurado: 'La sincronización todavía no está configurada en esta instalación.',
@@ -217,8 +219,16 @@ export default function InvitarPareja({ enfocar = false, alEnfocar }) {
         </p>
         <p className="mt-1 text-sm text-texto-2">
           La vinculación permite que cada uno use la app desde su celular y reciba
-          las interacciones del otro.
+          las interacciones del otro. Es completamente opcional: puedes usar
+          Conecta2 y comunicarte por WhatsApp sin vincular a tu pareja.
         </p>
+
+        {vinculada && (
+          <div className="mt-3 flex items-center gap-3 border-t border-borde pt-3">
+            <IndicadorConexion />
+            <IndicadorSync />
+          </div>
+        )}
 
         {!supabaseConfigurado && (
           <div className="mt-3 rounded-xl bg-tarjeta-hover p-3">

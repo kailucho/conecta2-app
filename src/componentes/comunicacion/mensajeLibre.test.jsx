@@ -77,13 +77,13 @@ function interacciones() {
 }
 
 describe('MensajeLibre', () => {
-  it('escribir y enviar crea una interacción type mensaje', async () => {
+  it('escribir y enviar por Conecta2 crea una interacción type mensaje', async () => {
     sembrar()
     await montar()
     fireEvent.change(screen.getByPlaceholderText(/Escríbele algo bonito/), {
       target: { value: 'te amo mucho' },
     })
-    fireEvent.click(screen.getByText('Enviar 💌'))
+    fireEvent.click(screen.getByText('Enviar por Conecta2'))
 
     await waitFor(() => expect(interacciones().length).toBe(1))
     const it0 = interacciones()[0]
@@ -112,21 +112,23 @@ describe('MensajeLibre', () => {
     fireEvent.click(screen.getByText(/Solo quería decirte que te amo/))
     expect(interacciones().length).toBe(0)
     // Confirmar sí envía.
-    fireEvent.click(screen.getByText('Enviar 💌'))
+    fireEvent.click(screen.getByText('Enviar por Conecta2'))
     await waitFor(() => expect(interacciones().length).toBe(1))
     expect(interacciones()[0].type).toBe('mensaje')
   })
 
-  it('sin pareja conserva el texto y no simula que fue enviado', async () => {
+  it('sin pareja no bloquea: prepara WhatsApp y nunca dice "enviado"', async () => {
+    window.open = vi.fn(() => ({}))
     sembrarSinPareja()
     await montar()
     const textarea = screen.getByPlaceholderText(/Escríbele algo bonito/)
     fireEvent.change(textarea, { target: { value: 'Te extraño' } })
-    fireEvent.click(screen.getByText('Enviar 💌'))
+    fireEvent.click(screen.getByText('Abrir WhatsApp 💬'))
 
-    await screen.findByText('requiere-vinculacion')
+    await screen.findByText('Mensaje preparado para WhatsApp.')
     expect(interacciones()).toEqual([])
-    expect(textarea.value).toBe('Te extraño')
+    expect(window.open).toHaveBeenCalled()
+    expect(screen.queryByText('requiere-vinculacion')).toBeNull()
     expect(screen.queryByText('¡Mensaje enviado!')).toBeNull()
   })
 })

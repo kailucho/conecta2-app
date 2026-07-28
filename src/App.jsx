@@ -7,6 +7,9 @@
 
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { usarApp } from './contexto/AppContexto.jsx'
+import { usarCiclo } from './contexto/usarCiclo.js'
+import { pronosticoDelDia } from './motor/pronosticoPareja.js'
+import { mostrarResumenMatutinoSiCorresponde } from './servicios/notificaciones.js'
 import NavegacionInferior from './componentes/comunes/NavegacionInferior.jsx'
 import Onboarding from './pantallas/Onboarding.jsx'
 import Hoy from './pantallas/Hoy.jsx'
@@ -34,11 +37,14 @@ export default function App() {
     cargando,
     perfil,
     config,
+    interacciones,
+    actualizarConfig,
     solicitudVinculacion,
     errorInteraccion,
     cerrarSolicitudVinculacion,
     limpiarErrorInteraccion,
   } = usarApp()
+  const ciclo = usarCiclo()
   const [pestana, setPestana] = useState('hoy')
   const [seccionAjustes, setSeccionAjustes] = useState(null)
   const [sosAbierto, setSosAbierto] = useState(false)
@@ -58,6 +64,23 @@ export default function App() {
     }
     html.classList.toggle('reducir-movimiento', !!config.reducirMovimiento)
   }, [perfil?.rol, config.reducirMovimiento])
+
+  // Resumen matutino (Nivel 1: solo con la app abierta, una vez por fecha).
+  useEffect(() => {
+    if (!perfil || !config.resumenMatutino?.activo) return
+    const pronosticoHoy = pronosticoDelDia(new Date(), {
+      ciclo,
+      fechaUltimaRegla: ciclo.fechaUltima,
+      interacciones,
+      userId: perfil.userId,
+      partnerId: perfil.partnerId,
+      privacidadHormonal: perfil.privacidadHormonal,
+    })
+    mostrarResumenMatutinoSiCorresponde(pronosticoHoy, config.resumenMatutino, (nuevo) =>
+      actualizarConfig({ resumenMatutino: nuevo }),
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perfil, config.resumenMatutino?.activo, config.resumenMatutino?.ultimaFecha])
 
   if (cargando) {
     return (

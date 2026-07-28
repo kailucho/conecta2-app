@@ -36,6 +36,9 @@ function sembrar() {
       privacidadHormonal: 'todo',
     }),
   )
+  // Canal predeterminado 'conecta2' para probar el envío interno explícitamente
+  // (el default de la app es 'whatsapp', ver whatsappService.debeUsarWhatsApp).
+  localStorage.setItem('mp:config', JSON.stringify({ canalPredeterminado: 'conecta2' }))
 }
 
 function Harness({ alAbrirMensaje }) {

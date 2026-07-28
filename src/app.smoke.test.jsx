@@ -94,10 +94,10 @@ describe('Prueba de humo de la app', () => {
       expect(screen.getByText(/Dile algo a tu amor/)).toBeTruthy()
 
       // Navega por cada pestaña y verifica un elemento clave.
-      fireEvent.click(screen.getByLabelText('Mes'))
+      fireEvent.click(screen.getByLabelText('Calendario'))
       await waitFor(() => expect(screen.getByText(/Modo de fertilidad/)).toBeTruthy())
 
-      fireEvent.click(screen.getByLabelText('Nosotros'))
+      fireEvent.click(screen.getByLabelText('Conexión'))
       await waitFor(() => expect(screen.getByText(/Termómetro de conexión/)).toBeTruthy())
 
       fireEvent.click(screen.getByLabelText('Más'))
@@ -109,7 +109,8 @@ describe('Prueba de humo de la app', () => {
     })
   }
 
-  it('sin pareja explica el bloqueo y lleva a la sección de vinculación', async () => {
+  it('sin pareja NO bloquea: la barra ofrece WhatsApp en vez de vinculación obligatoria', async () => {
+    window.open = vi.fn(() => ({}))
     sembrarPerfil('ella')
     const perfil = JSON.parse(localStorage.getItem('mp:perfil'))
     localStorage.setItem('mp:perfil', JSON.stringify({
@@ -120,12 +121,13 @@ describe('Prueba de humo de la app', () => {
     }))
     await montar()
 
-    fireEvent.click(screen.getByText('Vincula a tu pareja para interactuar'))
-    await screen.findByText('Vincula a tu pareja para enviarle esto')
-    fireEvent.click(screen.getByText('Ir a vinculación'))
+    // Ya no aparece el texto de bloqueo; invita a usar WhatsApp.
+    expect(screen.getByText('Dile algo a tu amor por WhatsApp…')).toBeTruthy()
+    expect(screen.queryByText('Vincula a tu pareja para interactuar')).toBeNull()
 
-    await screen.findByText('Pareja aún no vinculada')
-    expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('titulo-vinculacion')
+    // El centro de interacciones se abre igual, sin modal de vinculación.
+    fireEvent.click(screen.getByLabelText('Abrir más acciones'))
+    await waitFor(() => expect(screen.queryByText('Pareja aún no vinculada')).toBeNull())
     expect(JSON.parse(localStorage.getItem('mp:interacciones') || '[]')).toEqual([])
   })
 })

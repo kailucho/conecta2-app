@@ -47,6 +47,21 @@ const CONFIG_POR_DEFECTO = {
   pin: null,
   notifSensibles: false, // false = ocultar contenido sensible en notificaciones
   contadorUsoIA: 0,
+  // Comunicación: WhatsApp es el canal principal; Conecta2 es secundario.
+  // whatsappPareja NUNCA se sincroniza a Supabase por defecto (solo local).
+  canalPredeterminado: 'whatsapp', // 'whatsapp' | 'conecta2'
+  whatsappPareja: '',
+  mostrarPronosticoSemanal: true,
+  resumenMatutino: {
+    activo: false,
+    hora: '07:00',
+    dias: [0, 1, 2, 3, 4, 5, 6],
+    zonaHoraria: null, // null = detectar del navegador
+    finesSemana: true,
+    contenidoSensible: false,
+    silencio: false,
+    ultimaFecha: null,
+  },
 }
 
 const CICLO_POR_DEFECTO = {

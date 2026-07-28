@@ -14,6 +14,12 @@ import Toggle from '../componentes/comunes/Toggle.jsx'
 import GraficoAnimoPorFase from '../componentes/ajustes/GraficoAnimoPorFase.jsx'
 import PatronSemanal from '../componentes/ajustes/PatronSemanal.jsx'
 import InvitarPareja from '../componentes/ajustes/InvitarPareja.jsx'
+import { abrirWhatsApp, limpiarTelefono } from '../servicios/whatsappService.js'
+import { pedirPermiso, mostrarResumenMatutinoSiCorresponde } from '../servicios/notificaciones.js'
+import { pronosticoDelDia } from '../motor/pronosticoPareja.js'
+import { usarCiclo } from '../contexto/usarCiclo.js'
+import { pushSoportado, suscribirPush, revocarPush } from '../servicios/pushService.js'
+import { supabaseConfigurado } from '../servicios/supabaseClient.js'
 
 // Insights llama a la IA (Edge Function): se separa del chunk principal.
 const Insights = lazy(() => import('../componentes/ajustes/Insights.jsx'))
@@ -35,13 +41,52 @@ export default function Ajustes({ irAGuia, seccionObjetivo, alConsumirObjetivo }
   const {
     perfil,
     config,
+    interacciones,
     guardarPerfil,
     actualizarConfig,
     reiniciarApp,
   } = usarApp()
+  const ciclo = usarCiclo()
   const esElla = perfil.rol === 'ella'
   const [celebraUpgrade, setCelebraUpgrade] = useState(false)
   const [confirmarReinicio, setConfirmarReinicio] = useState(false)
+  const resumenMatutino = config.resumenMatutino || {}
+
+  async function activarResumenMatutino() {
+    const permiso = await pedirPermiso()
+    await actualizarConfig({
+      resumenMatutino: { ...resumenMatutino, activo: permiso === 'granted' || permiso === 'no_soportado' },
+    })
+  }
+
+  const [estadoPush, setEstadoPush] = useState(null) // null | 'activando' | 'activado' | 'error'
+
+  async function activarPush() {
+    setEstadoPush('activando')
+    const r = await suscribirPush()
+    setEstadoPush(r.ok ? 'activado' : 'error')
+  }
+
+  async function desactivarPush() {
+    await revocarPush()
+    setEstadoPush(null)
+  }
+
+  function probarResumenMatutino() {
+    const pronosticoHoy = pronosticoDelDia(new Date(), {
+      ciclo,
+      fechaUltimaRegla: ciclo.fechaUltima,
+      interacciones,
+      userId: perfil.userId,
+      partnerId: perfil.partnerId,
+      privacidadHormonal: perfil.privacidadHormonal,
+    })
+    mostrarResumenMatutinoSiCorresponde(
+      pronosticoHoy,
+      { ...resumenMatutino, ultimaFecha: null }, // fuerza la prueba aunque ya se haya mostrado hoy
+      () => {},
+    )
+  }
 
   async function cambiarTipo(nuevo) {
     // Si pasan de no convivir a convivir, se celebra el nuevo capítulo.
@@ -55,6 +100,24 @@ export default function Ajustes({ irAGuia, seccionObjetivo, alConsumirObjetivo }
   }
 
   const nombresNiv = nombresNiveles(perfil.rol, perfil.tipoRelacion)
+  const [copiadoNumero, setCopiadoNumero] = useState(false)
+
+  async function probarWhatsApp() {
+    await abrirWhatsApp({
+      telefono: config.whatsappPareja,
+      texto: 'Este es un mensaje de prueba desde Conecta2 💙',
+    })
+  }
+
+  async function copiarNumero() {
+    try {
+      await navigator.clipboard.writeText(config.whatsappPareja || '')
+      setCopiadoNumero(true)
+      setTimeout(() => setCopiadoNumero(false), 2000)
+    } catch {
+      // Portapapeles no disponible; el número sigue visible para copiarlo a mano.
+    }
+  }
 
   return (
     <div className="animate-aparecer space-y-4">
@@ -233,6 +296,178 @@ export default function Ajustes({ irAGuia, seccionObjetivo, alConsumirObjetivo }
               Un nombre discreto para el ícono en tu celular.
             </p>
           </div>
+        </TarjetaBase>
+      </section>
+
+      {/* ---------- Comunicación ---------- */}
+      <section className="space-y-3">
+        <h2 className="font-titulo text-lg font-bold text-texto">Comunicación</h2>
+        <TarjetaBase className="space-y-3">
+          <div>
+            <p className="mb-2 text-sm font-semibold text-texto">Canal predeterminado</p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'whatsapp', label: 'WhatsApp 💬' },
+                { id: 'conecta2', label: 'Conecta2 💗' },
+              ].map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => actualizarConfig({ canalPredeterminado: c.id })}
+                  className={`rounded-pill border px-2 py-2 text-xs font-bold transition-all ${
+                    config.canalPredeterminado === c.id
+                      ? 'border-acento bg-acento text-white'
+                      : 'border-borde text-texto-2'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t border-borde pt-3">
+            <label htmlFor="aj-whatsapp" className="text-sm font-semibold text-texto">
+              WhatsApp de mi pareja (opcional)
+            </label>
+            <input
+              id="aj-whatsapp"
+              type="tel"
+              value={config.whatsappPareja || ''}
+              onChange={(e) =>
+                actualizarConfig({ whatsappPareja: limpiarTelefono(e.target.value) })
+              }
+              placeholder="+51 999 888 777"
+              className="mt-1 w-full rounded-pill border border-borde bg-tarjeta px-3 py-2 text-sm text-texto"
+            />
+            <p className="mt-1 text-xs text-texto-3">
+              Opcional. Se guarda solo en este celular, nunca se sincroniza. Si
+              lo dejas vacío, WhatsApp se abrirá para elegir el contacto.
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button
+                onClick={probarWhatsApp}
+                className="min-h-touch rounded-pill border border-borde py-2 text-sm font-semibold text-texto"
+              >
+                Probar WhatsApp
+              </button>
+              <button
+                onClick={copiarNumero}
+                disabled={!config.whatsappPareja}
+                className="min-h-touch rounded-pill border border-borde py-2 text-sm font-semibold text-texto disabled:opacity-50"
+              >
+                {copiadoNumero ? '¡Copiado! ✅' : 'Copiar número'}
+              </button>
+            </div>
+          </div>
+        </TarjetaBase>
+      </section>
+
+      {/* ---------- Pronóstico ---------- */}
+      <section className="space-y-3">
+        <h2 className="font-titulo text-lg font-bold text-texto">Pronóstico</h2>
+        <TarjetaBase>
+          <Toggle
+            emoji="📅"
+            etiqueta="Mostrar pronóstico de 7 días"
+            descripcion="La fila de días en Hoy con el pronóstico de la semana."
+            activo={config.mostrarPronosticoSemanal !== false}
+            onCambiar={(v) => actualizarConfig({ mostrarPronosticoSemanal: v })}
+          />
+        </TarjetaBase>
+      </section>
+
+      {/* ---------- Notificaciones ---------- */}
+      <section className="space-y-3">
+        <h2 className="font-titulo text-lg font-bold text-texto">Notificaciones</h2>
+        <TarjetaBase className="space-y-3">
+          {resumenMatutino.activo ? (
+            <Toggle
+              emoji="☀️"
+              etiqueta="Resumen de la mañana"
+              descripcion="Un vistazo rápido al pronóstico cuando abres la app."
+              activo={resumenMatutino.activo}
+              onCambiar={(v) => actualizarConfig({ resumenMatutino: { ...resumenMatutino, activo: v } })}
+            />
+          ) : (
+            <div>
+              <p className="text-sm font-semibold text-texto">☀️ Resumen de la mañana</p>
+              <p className="mt-1 text-xs text-texto-2">
+                Un vistazo rápido al pronóstico del día cuando abres la app. Pediremos
+                permiso de notificaciones solo si lo activas.
+              </p>
+              <button
+                onClick={activarResumenMatutino}
+                className="mt-2 w-full rounded-pill bg-acento py-2.5 text-sm font-bold text-white"
+              >
+                Activar resumen de la mañana
+              </button>
+            </div>
+          )}
+
+          {resumenMatutino.activo && (
+            <div className="space-y-2 border-t border-borde pt-3">
+              <label className="text-sm font-semibold text-texto">Hora</label>
+              <input
+                type="time"
+                value={resumenMatutino.hora || '07:00'}
+                onChange={(e) =>
+                  actualizarConfig({ resumenMatutino: { ...resumenMatutino, hora: e.target.value } })
+                }
+                className="w-full rounded-pill border border-borde bg-tarjeta px-3 py-2 text-sm text-texto"
+              />
+              <Toggle
+                emoji="📅"
+                etiqueta="Incluir fines de semana"
+                activo={resumenMatutino.finesSemana !== false}
+                onCambiar={(v) => actualizarConfig({ resumenMatutino: { ...resumenMatutino, finesSemana: v } })}
+              />
+              <Toggle
+                emoji="🔒"
+                etiqueta="Contenido sensible"
+                descripcion="Si lo apagas, la notificación es discreta y no menciona el ciclo."
+                activo={resumenMatutino.contenidoSensible === true}
+                onCambiar={(v) => actualizarConfig({ resumenMatutino: { ...resumenMatutino, contenidoSensible: v } })}
+              />
+              <Toggle
+                emoji="🔕"
+                etiqueta="Silencio"
+                activo={resumenMatutino.silencio === true}
+                onCambiar={(v) => actualizarConfig({ resumenMatutino: { ...resumenMatutino, silencio: v } })}
+              />
+              <button
+                onClick={probarResumenMatutino}
+                className="w-full rounded-pill border border-borde py-2 text-sm font-semibold text-texto"
+              >
+                Probar notificación
+              </button>
+
+              {supabaseConfigurado && pushSoportado() && (
+                <div className="border-t border-borde pt-3">
+                  <p className="text-xs text-texto-3">
+                    Con notificaciones push, el resumen puede llegar aunque la app
+                    esté cerrada. Requiere que el servidor esté configurado (ver
+                    documentación técnica).
+                  </p>
+                  <button
+                    onClick={estadoPush === 'activado' ? desactivarPush : activarPush}
+                    disabled={estadoPush === 'activando'}
+                    className="mt-2 w-full rounded-pill border border-borde py-2 text-sm font-semibold text-texto disabled:opacity-50"
+                  >
+                    {estadoPush === 'activado'
+                      ? 'Desactivar notificaciones push'
+                      : estadoPush === 'activando'
+                        ? 'Activando…'
+                        : 'Activar notificaciones push (beta)'}
+                  </button>
+                  {estadoPush === 'error' && (
+                    <p className="mt-1 text-xs text-peligro">
+                      No se pudo activar. Revisa el permiso del navegador.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </TarjetaBase>
       </section>
 

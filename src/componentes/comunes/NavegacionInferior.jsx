@@ -1,10 +1,12 @@
 // Barra de navegación inferior con 4 pestañas. Botones ≥44px, con resaltado del
 // acento del tema activo. La Guía vive dentro de "Más" (no ocupa pestaña).
 
+// Etiquetas visuales renombradas (spec: Hoy / Calendario / Conexión / Más);
+// los ids internos se mantienen para no romper la navegación existente.
 const PESTANAS = [
   { id: 'hoy', icono: '🏠', label: 'Hoy' },
-  { id: 'mes', icono: '📅', label: 'Mes' },
-  { id: 'nosotros', icono: '💑', label: 'Nosotros' },
+  { id: 'mes', icono: '📅', label: 'Calendario' },
+  { id: 'nosotros', icono: '💑', label: 'Conexión' },
   { id: 'ajustes', icono: '⚙️', label: 'Más' },
 ]
 

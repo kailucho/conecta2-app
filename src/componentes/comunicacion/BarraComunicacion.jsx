@@ -9,13 +9,16 @@
 // ============================================================
 
 import { useRef, useState } from 'react'
-import { accionPorId } from '../../datos/accionesRapidas.js'
+import { accionPorId, ACCIONES_DESTACADAS_HOY } from '../../datos/accionesRapidas.js'
 import { claveDia } from '../../motor/fechas.js'
 import { usarEnvioInteraccion } from './usarEnvioInteraccion.js'
 import { usarApp } from '../../contexto/AppContexto.jsx'
 import { parejaVinculada } from '../../servicios/syncService.js'
 
-const RAPIDAS = ['corazon', 'besitos', 'abrazo', 'extrano']
+// Mismo catálogo que AccionesRapidasGrid (Hoy): mantener presionado el
+// corazón muestra un atajo a las mismas 4 acciones destacadas del día, en
+// vez de un segundo set de gestos distinto.
+const RAPIDAS = ACCIONES_DESTACADAS_HOY
 
 export default function BarraComunicacion({ alAbrirCentro, alAbrirMensaje, onReaccion }) {
   const enviarAccion = usarEnvioInteraccion()
@@ -32,15 +35,17 @@ export default function BarraComunicacion({ alAbrirCentro, alAbrirMensaje, onRea
     if (enviandoRef.current) return // anti-doble-envío
     enviandoRef.current = true
     const a = accionPorId(id)
+    let canalUsado = 'conecta2'
     if (a) {
       const resultado = await enviarAccion(a, { claveAntiSpam: `reaccion:${claveDia(new Date())}` })
       if (!resultado?.ok) {
         enviandoRef.current = false
         return resultado
       }
+      canalUsado = resultado.canal || 'conecta2'
       onReaccion?.(a.expresion)
     }
-    setFeedback(true)
+    setFeedback(canalUsado === 'whatsapp' ? 'whatsapp' : 'conecta2')
     setTimeout(() => setFeedback(false), 1500)
     setTimeout(() => {
       enviandoRef.current = false
@@ -80,10 +85,12 @@ export default function BarraComunicacion({ alAbrirCentro, alAbrirMensaje, onRea
           onClick={alAbrirMensaje}
           className="min-h-touch flex-1 rounded-pill px-3 py-2 text-left text-sm text-texto-3"
         >
-          {feedback ? (
+          {feedback === 'whatsapp' ? (
+            <span className="font-semibold text-acento">💗 Mensaje preparado para WhatsApp</span>
+          ) : feedback === 'conecta2' ? (
             <span className="font-semibold text-acento">💗 ¡Enviado!</span>
           ) : (
-            vinculada ? 'Dile algo a tu amor…' : 'Vincula a tu pareja para interactuar'
+            vinculada ? 'Dile algo a tu amor…' : 'Dile algo a tu amor por WhatsApp…'
           )}
         </button>
 

@@ -22,6 +22,9 @@ function sembrarPerfil(estadoVinculacion = 'no_vinculada') {
     rol: 'ella',
     tipoRelacion: 'conviven',
   }))
+  // Canal predeterminado 'conecta2' para probar el envío interno explícitamente
+  // (el default de la app es 'whatsapp', ver whatsappService.debeUsarWhatsApp).
+  localStorage.setItem('mp:config', JSON.stringify({ canalPredeterminado: 'conecta2' }))
 }
 
 const ACCION = {
@@ -70,16 +73,17 @@ async function montar() {
 }
 
 describe('guard central de interacciones de pareja', () => {
-  it('sin pareja no guarda, no encola, no da puntos y abre la explicación', async () => {
+  it('sin pareja no guarda ni encola internamente: prepara WhatsApp en su lugar, sin bloquear', async () => {
+    window.open = vi.fn(() => ({}))
     sembrarPerfil()
     await montar()
     fireEvent.click(screen.getByText('Enviar abrazo'))
 
-    await screen.findByText('Vincula a tu pareja para enviarle esto')
-    expect(screen.getByText('sin_pareja_vinculada')).toBeTruthy()
+    await screen.findByText('ok')
+    expect(screen.queryByText('Vincula a tu pareja para enviarle esto')).toBeNull()
     expect(JSON.parse(localStorage.getItem('mp:interacciones') || '[]')).toEqual([])
     expect(JSON.parse(localStorage.getItem('mp:colaSalida') || '[]')).toEqual([])
-    expect(JSON.parse(localStorage.getItem('mp:gamificacion') || '{"puntos":0}').puntos).toBe(0)
+    expect(window.open).toHaveBeenCalled()
   })
 
   it('con perfil explícitamente vinculado guarda y encola', async () => {

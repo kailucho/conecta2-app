@@ -1,9 +1,20 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { calcularRadarPeligrosidad, nivelPorScore, NIVELES_RADAR } from './radarPeligrosidad.js'
 
 const USER = 'user-1'
 const PARTNER = 'partner-1'
 const HOY = new Date('2026-07-20T12:00:00.000Z')
+
+// estaExpirado() compara contra Date.now(): fija el reloj a HOY para que las
+// alertas con expiresAt fin-de-día de HOY no aparezcan expiradas por el paso
+// del tiempo real entre que se escribió el test y que se ejecuta.
+beforeEach(() => {
+  vi.useFakeTimers()
+  vi.setSystemTime(HOY)
+})
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 function alerta(actionId, overrides = {}) {
   return {

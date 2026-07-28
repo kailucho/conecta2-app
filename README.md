@@ -29,6 +29,10 @@ VITE_SUPABASE_PUBLISHABLE_KEY=
 # [Legacy] API key de Anthropic usada hoy directo desde el navegador.
 # Ver FASE_2_IMPLEMENTATION_SUMMARY.md para la deuda de seguridad asociada.
 VITE_ANTHROPIC_API_KEY=
+
+# Web Push (opcional, ver docs/push-notifications.md). Solo la clave
+# PÚBLICA vive en el frontend; la privada es un secreto de Supabase.
+VITE_VAPID_PUBLIC_KEY=
 ```
 
 ## Supabase (backend de Fase 2)
@@ -50,6 +54,17 @@ Pruebas manuales end-to-end con dos usuarios: [`SUPABASE_TESTING_GUIDE.md`](SUPA
 
 - [`FASE_2_SUPABASE_PLAN.md`](FASE_2_SUPABASE_PLAN.md) — diagnóstico y plan de implementación.
 - [`FASE_2_IMPLEMENTATION_SUMMARY.md`](FASE_2_IMPLEMENTATION_SUMMARY.md) — qué se implementó, decisiones y limitaciones.
+
+## Pronóstico emocional, WhatsApp y notificaciones
+
+Conecta2 funciona como un pronóstico de bienestar para parejas: la
+vinculación es opcional (WhatsApp es el canal principal, Conecta2 el
+secundario). Documentación específica:
+
+- [`docs/pronostico-emocional.md`](docs/pronostico-emocional.md) — motor de pronóstico, prioridad estado real vs. cálculo, privacidad.
+- [`docs/whatsapp-integration.md`](docs/whatsapp-integration.md) — preparación de mensajes, número de pareja, reglas de honestidad.
+- [`docs/push-notifications.md`](docs/push-notifications.md) — resumen matutino (Niveles 1-3), migraciones, configuración VAPID/scheduler.
+- [`docs/asset-inventory.md`](docs/asset-inventory.md) — inventario de imágenes de personajes e iconos, con fallback SVG mientras faltan.
 
 ## Estructura del proyecto
 

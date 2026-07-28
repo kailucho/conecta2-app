@@ -189,6 +189,31 @@ h1, h2, h3, h4, .fuente-titulo {
 }
 
 /* ============================================================
+   TARJETA CLARA — variante fija blanca para destacar sobre el fondo oscuro
+   (p.ej. "Recomendación de hoy", "Acciones rápidas"). Usa `background`
+   shorthand completo (no solo background-color): `.tarjeta-tema` define un
+   gradiente semitransparente vía `background`, y sobreescribir solo
+   background-color (como haría `!bg-white` de Tailwind) deja ese gradiente
+   encima, dando un aspecto oscuro turbio en vez de blanco limpio.
+   ============================================================ */
+.tarjeta-clara {
+  background: #ffffff !important;
+  box-shadow: 0 14px 34px -16px rgba(15, 23, 42, 0.35) !important;
+}
+.tarjeta-clara::before {
+  background: rgba(15, 23, 42, 0.08) !important;
+}
+/* En modo Esposa el fondo YA es blanco/pastel: el mismo blanco fijo se funde
+   y pierde el efecto "acento" que tiene en el modo oscuro. Se compensa con un
+   borde de color visible en vez de depender solo del contraste de fondo. */
+:root[data-tema='ella'] .tarjeta-clara {
+  box-shadow: 0 14px 30px -18px rgba(255, 79, 139, 0.35) !important;
+}
+:root[data-tema='ella'] .tarjeta-clara::before {
+  background: rgba(255, 79, 139, 0.28) !important;
+}
+
+/* ============================================================
    FONDO DECORATIVO (nubes, estrellas, destellos)
    ============================================================ */
 .fondo-deco {

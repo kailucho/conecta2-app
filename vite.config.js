@@ -9,7 +9,17 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['iconos/*.svg', 'fuentes/*.ttf'],
+      // injectManifest (en vez de generateSW): permite un service worker propio
+      // (src/sw.js) con handlers 'push' / 'notificationclick' para el resumen
+      // matutino por Web Push, conservando precache/offline/autoUpdate/fallback
+      // de navegación (ver docs/push-notifications.md).
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ttf,woff2,ico}'],
+      },
+      includeAssets: ['iconos/*.svg', 'iconos/*.png', 'fuentes/*.ttf'],
       manifest: {
         name: 'Conecta2',
         short_name: 'Conecta2',
@@ -21,28 +31,22 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'iconos/icono-app.svg',
+            src: 'iconos/icono-app.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
           },
           {
-            src: 'iconos/icono-app.svg',
+            src: 'iconos/icono-app.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
           },
           {
-            src: 'iconos/icono-app.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
+            src: 'iconos/icono-app-maskable.png',
+            sizes: '512x512',
+            type: 'image/png',
             purpose: 'maskable',
           },
         ],
-      },
-      workbox: {
-        // Precache de toda la app para que funcione 100% offline.
-        globPatterns: ['**/*.{js,css,html,svg,png,ttf,woff2,ico}'],
-        navigateFallback: '/index.html',
-        cleanupOutdatedCaches: true,
       },
       devOptions: {
         enabled: false,

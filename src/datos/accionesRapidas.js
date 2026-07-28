@@ -189,6 +189,11 @@ export const ACCIONES_RAPIDAS = [
 // Las primeras N que se muestran antes de "Ver más".
 export const ACCIONES_DESTACADAS = 6
 
+// Las 4 acciones "destacadas del día" — MISMO set en todas las superficies
+// rápidas (BarraComunicacion, AccionesRapidasGrid) para que la app no ofrezca
+// catálogos distintos de "lo mismo" en dos lugares distintos de Hoy.
+export const ACCIONES_DESTACADAS_HOY = ['hambre', 'engreir', 'extrano', 'meti_pata']
+
 export function accionPorId(id) {
   return ACCIONES_RAPIDAS.find((a) => a.id === id)
 }
